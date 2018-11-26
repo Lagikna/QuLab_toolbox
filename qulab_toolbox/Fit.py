@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
+inf=np.inf
 
 class T1_Fit():
     '''Fit T1'''
@@ -48,24 +49,25 @@ class Rabi_Fit():
         self._A=None
         self._B=None
         self._C=None
-        self._D=None
+        self._lambda=None
         self._Tr=None
         self.p0=p0
         self.bounds=bounds
 
-    def _fitfunc(self,t,A,B,C,D,Tr):
-        y=A*np.exp(-t/Tr)*np.cos(B*t+C)+D
+    def _fitfunc(self,t,A,B,C,lmda,Tr):
+        # lmda: lambda,rabi's wavelength
+        y=A*np.exp(-t/Tr)*np.cos(2*np.pi/lmda*t+B)+C
         return y
 
     def _Fitcurve(self):
         t,y=self.data
         p_est, err_est=curve_fit(self._fitfunc, t, y,
                                 p0=self.p0, bounds=self.bounds, maxfev=100000)
-        [A,B,C,D,Tr]=p_est
+        [A,B,C,lmda,Tr]=p_est
         self._A=A
         self._B=B
         self._C=C
-        self._D=D
+        self._lambda=lmda
         self._Tr=Tr
         return p_est, err_est
 
@@ -83,8 +85,9 @@ class Rabi_Fit():
 
     @property
     def PPlen(self):
+        '''Pi Pulse Length, equal 1/2 lambda'''
         self._Fitcurve()
-        _PPlen=1/self._B
+        _PPlen=self._lambda/2
         return _PPlen
 
 class Ramsey_Fit():
