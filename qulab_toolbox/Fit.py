@@ -2,15 +2,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
+inf=np.inf
 
 class T1_Fit():
     '''Fit T1'''
 
-    def __init__(self,data):
+    def __init__(self,data,p0=None,bounds=(-inf, inf)):
         self.data=data
         self._A=None
         self._B=None
         self._T1=None
+        self.p0=p0
+        self.bounds=bounds
 
     def _fitfunc(self,t,A,B,T1):
         y=A*np.exp(-t/T1)+B
@@ -18,7 +21,8 @@ class T1_Fit():
 
     def _Fitcurve(self):
         t,y=self.data
-        p_est, err_est=curve_fit(self._fitfunc,t,y,maxfev=100000)
+        p_est, err_est=curve_fit(self._fitfunc, t, y,
+                                p0=self.p0, bounds=self.bounds, maxfev=100000)
         [A,B,T1]=p_est
         self._A=A
         self._B=B
@@ -40,26 +44,30 @@ class T1_Fit():
 class Rabi_Fit():
     '''Fit rabi'''
 
-    def __init__(self,data):
+    def __init__(self,data,p0=None,bounds=(-inf, inf)):
         self.data=data
         self._A=None
         self._B=None
         self._C=None
-        self._D=None
+        self._lambda=None
         self._Tr=None
+        self.p0=p0
+        self.bounds=bounds
 
-    def _fitfunc(self,t,A,B,C,D,Tr):
-        y=A*np.exp(-t/Tr)*np.cos(B*t+C)+D
+    def _fitfunc(self,t,A,B,C,lmda,Tr):
+        # lmda: lambda,rabi's wavelength
+        y=A*np.exp(-t/Tr)*np.cos(2*np.pi/lmda*t+B)+C
         return y
 
     def _Fitcurve(self):
         t,y=self.data
-        p_est, err_est=curve_fit(self._fitfunc,t,y,maxfev=100000)
-        [A,B,C,D,Tr]=p_est
+        p_est, err_est=curve_fit(self._fitfunc, t, y,
+                                p0=self.p0, bounds=self.bounds, maxfev=100000)
+        [A,B,C,lmda,Tr]=p_est
         self._A=A
         self._B=B
         self._C=C
-        self._D=D
+        self._lambda=lmda
         self._Tr=Tr
         return p_est, err_est
 
@@ -77,20 +85,23 @@ class Rabi_Fit():
 
     @property
     def PPlen(self):
+        '''Pi Pulse Length, equal 1/2 lambda'''
         self._Fitcurve()
-        _PPlen=1/self._B
+        _PPlen=self._lambda/2
         return _PPlen
 
 class Ramsey_Fit():
     '''Fit Ramsey'''
 
-    def __init__(self,data,T1):
+    def __init__(self,data,T1,p0=None,bounds=(-inf, inf)):
         self.data=data
         self._T1=T1
         self._delta=None
         self._A=None
         self._B=None
         self._T_phi=None
+        self.p0=p0
+        self.bounds=bounds
 
     def _fitfunc(self,t,A,B,T_phi,delta):
         y=A*np.exp(-t/2/self._T1-np.square(t/T_phi))*np.cos(delta*t)+B
@@ -98,7 +109,8 @@ class Ramsey_Fit():
 
     def _Fitcurve(self):
         t,y=self.data
-        p_est, err_est=curve_fit(self._fitfunc,t,y,maxfev=100000)
+        p_est, err_est=curve_fit(self._fitfunc, t, y,
+                                p0=self.p0, bounds=self.bounds, maxfev=100000)
         [A,B,T_phi,delta]=p_est
         self._A=A
         self._B=B
@@ -122,11 +134,13 @@ class Spinecho_Fit():
     '''Fit spinecho
     '''
 
-    def __init__(self,data):
+    def __init__(self,data,p0=None,bounds=(-inf, inf)):
         self.data=data
         self._A=None
         self._B=None
         self._T_2E=None
+        self.p0=p0
+        self.bounds=bounds
 
     def _fitfunc(self,t,A,B,T_2E):
         y=A*np.exp(-t/T_2E)+B
@@ -134,7 +148,8 @@ class Spinecho_Fit():
 
     def _Fitcurve(self):
         t,y=self.data
-        p_est, err_est=curve_fit(self._fitfunc,t,y,maxfev=100000)
+        p_est, err_est=curve_fit(self._fitfunc, t, y,
+                                p0=self.p0, bounds=self.bounds, maxfev=100000)
         [A,B,T_2E]=p_est
         self._A=A
         self._B=B
