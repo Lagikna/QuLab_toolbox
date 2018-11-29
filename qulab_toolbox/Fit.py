@@ -87,7 +87,7 @@ class Rabi_Fit():
     def PPlen(self):
         '''Pi Pulse Length, equal 1/2 lambda'''
         self._Fitcurve()
-        _PPlen=self._lambda/2
+        _PPlen=np.abs(self._lambda/2)
         return _PPlen
 
 class Ramsey_Fit():
