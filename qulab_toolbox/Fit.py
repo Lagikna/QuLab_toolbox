@@ -87,9 +87,8 @@ class Rabi_Fit():
     def rabi_freq(self):
         '''rabi frequency'''
         self._Fitcurve()
-        # 由于lamda 默认us为单位，
-        lbd=self._lambda*1e-6
-        rabi_freq=np.abs(2*np.pi/lbd)
+        # lambda 默认单位为us, 所以返回频率为MHz
+        rabi_freq=np.abs(2*np.pi/self._lambda)
         return rabi_freq
 
     @property
