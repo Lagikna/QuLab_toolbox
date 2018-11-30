@@ -84,6 +84,15 @@ class Rabi_Fit():
         return self._Tr
 
     @property
+    def rabi_freq(self):
+        '''rabi frequency'''
+        self._Fitcurve()
+        # 由于lamda 默认us为单位，
+        lbd=self._lambda*1e-6
+        rabi_freq=np.abs(2*np.pi/lbd)
+        return rabi_freq
+
+    @property
     def PPlen(self):
         '''Pi Pulse Length, equal 1/2 lambda'''
         self._Fitcurve()
