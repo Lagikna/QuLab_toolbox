@@ -97,51 +97,15 @@ class Ramsey_Fit(BaseFit):
         return T_phi
 
 
-# 待修改
 class Spinecho_Fit():
     '''Fit spinecho
     '''
-
-    def __init__(self,data,p0=None,bounds=(-inf, inf)):
-        self.data=data
-        self._A=None
-        self._B=None
-        self._T_2E=None
-        self.p0=p0
-        self.bounds=bounds
-        self._pcov=None
-        self._error=None
 
     def _fitfunc(self,t,A,B,T_2E):
         y=A*np.exp(-t/T_2E)+B
         return y
 
-    def _Fitcurve(self):
-        t,y=self.data
-        p_est, err_est=curve_fit(self._fitfunc, t, y,
-                                p0=self.p0, bounds=self.bounds, maxfev=100000)
-        [A,B,T_2E]=p_est
-        self._A=A
-        self._B=B
-        self._T_2E=T_2E
-        self._pcov = err_est
-        self._error = np.sqrt(np.diag(err_est))
-        return p_est, err_est
-
-    def Plot_Fit(self):
-        t,y=self.data
-        p_est, err_est=self._Fitcurve()
-        plt.plot(t,y,'rx')
-        plt.plot(t,self._fitfunc(t,*p_est),'k--')
-        plt.show()
-
     @property
     def T_2E(self):
-        self._Fitcurve()
-        return self._T_2E
-
-    @property
-    def error(self):
-        '''standard deviation errors on the parameters '''
-        self._Fitcurve()
-        return self._error
+        A,B,T_2E = self._popt
+        return T_2E
