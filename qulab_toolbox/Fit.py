@@ -14,6 +14,8 @@ class T1_Fit():
         self._T1=None
         self.p0=p0
         self.bounds=bounds
+        self._pcov=None
+        self._error=None
 
     def _fitfunc(self,t,A,B,T1):
         y=A*np.exp(-t/T1)+B
@@ -27,6 +29,8 @@ class T1_Fit():
         self._A=A
         self._B=B
         self._T1=T1
+        self._pcov = err_est
+        self._error = np.sqrt(np.diag(err_est))
         return p_est, err_est
 
     def Plot_Fit(self):
@@ -41,6 +45,13 @@ class T1_Fit():
         self._Fitcurve()
         return self._T1
 
+    @property
+    def error(self):
+        '''standard deviation errors on the parameters '''
+        self._Fitcurve()
+        return self._error
+
+
 class Rabi_Fit():
     '''Fit rabi'''
 
@@ -53,6 +64,8 @@ class Rabi_Fit():
         self._Tr=None
         self.p0=p0
         self.bounds=bounds
+        self._pcov=None
+        self._error=None
 
     def _fitfunc(self,t,A,B,C,lmda,Tr):
         # lmda: lambda,rabi's wavelength
@@ -69,6 +82,8 @@ class Rabi_Fit():
         self._C=C
         self._lambda=lmda
         self._Tr=Tr
+        self._pcov = err_est
+        self._error = np.sqrt(np.diag(err_est))
         return p_est, err_est
 
     def Plot_Fit(self):
@@ -98,6 +113,13 @@ class Rabi_Fit():
         _PPlen=np.abs(self._lambda/2)
         return _PPlen
 
+    @property
+    def error(self):
+        '''standard deviation errors on the parameters '''
+        self._Fitcurve()
+        return self._error
+
+
 class Ramsey_Fit():
     '''Fit Ramsey'''
 
@@ -110,6 +132,8 @@ class Ramsey_Fit():
         self._T_phi=None
         self.p0=p0
         self.bounds=bounds
+        self._pcov=None
+        self._error=None
 
     def _fitfunc(self,t,A,B,T_phi,delta):
         y=A*np.exp(-t/2/self._T1-np.square(t/T_phi))*np.cos(delta*t)+B
@@ -124,6 +148,8 @@ class Ramsey_Fit():
         self._B=B
         self._T_phi=T_phi
         self._delta=delta
+        self._pcov = err_est
+        self._error = np.sqrt(np.diag(err_est))
         return p_est, err_est
 
     def Plot_Fit(self):
@@ -138,6 +164,13 @@ class Ramsey_Fit():
         self._Fitcurve()
         return self._T_phi
 
+    @property
+    def error(self):
+        '''standard deviation errors on the parameters '''
+        self._Fitcurve()
+        return self._error
+
+
 class Spinecho_Fit():
     '''Fit spinecho
     '''
@@ -149,6 +182,8 @@ class Spinecho_Fit():
         self._T_2E=None
         self.p0=p0
         self.bounds=bounds
+        self._pcov=None
+        self._error=None
 
     def _fitfunc(self,t,A,B,T_2E):
         y=A*np.exp(-t/T_2E)+B
@@ -162,6 +197,8 @@ class Spinecho_Fit():
         self._A=A
         self._B=B
         self._T_2E=T_2E
+        self._pcov = err_est
+        self._error = np.sqrt(np.diag(err_est))
         return p_est, err_est
 
     def Plot_Fit(self):
@@ -175,3 +212,9 @@ class Spinecho_Fit():
     def T_2E(self):
         self._Fitcurve()
         return self._T_2E
+
+    @property
+    def error(self):
+        '''standard deviation errors on the parameters '''
+        self._Fitcurve()
+        return self._error
