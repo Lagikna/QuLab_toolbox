@@ -2,15 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-inf=np.inf
 
 class BaseFit(object):
     """BaseFit class"""
-    def __init__(self, data,p0=None,bounds=(-inf, inf)):
+    def __init__(self, data, **kw):
         super(BaseFit, self).__init__()
         self.data=data
-        self.p0=p0
-        self.bounds=bounds
+        self._kw=kw
         self._Fitcurve()
 
     def _fitfunc(self, t, A ,B ,T1):
@@ -20,11 +18,10 @@ class BaseFit(object):
 
     def _Fitcurve(self):
         t,y=self.data
-        p_est, err_est=curve_fit(self._fitfunc, t, y,
-                                p0=self.p0, bounds=self.bounds, maxfev=100000)
-        self._popt = p_est
-        self._pcov = err_est
-        self._error = np.sqrt(np.diag(err_est))
+        popt, pcov=curve_fit(self._fitfunc, t, y, maxfev=100000, **self._kw)
+        self._popt = popt
+        self._pcov = pcov
+        self._error = np.sqrt(np.diag(pcov))
 
     def Plot_Fit(self):
         t,y=self.data
@@ -83,9 +80,9 @@ class Rabi_Fit(BaseFit):
 class Ramsey_Fit(BaseFit):
     '''Fit Ramsey'''
 
-    def __init__(self,data,T1,p0=None,bounds=(-inf, inf)):
+    def __init__(self,data,T1,**kw):
         self._T1=T1
-        super(Ramsey_Fit, self).__init__(data=data,p0=p0,bounds=bounds)
+        super(Ramsey_Fit, self).__init__(data=data,**kw)
 
     def _fitfunc(self,t,A,B,T_phi,delta):
         y=A*np.exp(-t/2/self._T1-np.square(t/T_phi))*np.cos(delta*t)+B
@@ -98,8 +95,7 @@ class Ramsey_Fit(BaseFit):
 
 
 class Spinecho_Fit():
-    '''Fit spinecho
-    '''
+    '''Fit spinecho'''
 
     def _fitfunc(self,t,A,B,T_2E):
         y=A*np.exp(-t/T_2E)+B
