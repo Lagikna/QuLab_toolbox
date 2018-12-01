@@ -4,6 +4,41 @@ from scipy.optimize import curve_fit
 
 inf=np.inf
 
+class BaseFit(object):
+    """docstring for BaseFit."""
+    def __init__(self, data,p0=None,bounds=(-inf, inf)):
+        super(BaseFit, self).__init__()
+        self.data=data
+        self.p0=p0
+        self.bounds=bounds
+        self._Fitcurve()
+
+    def _fitfunc(self, t, *params):
+        '''params: paramters list'''
+        A,B,T1 = params
+        y=A*np.exp(-t/T1)+B
+        return y
+
+    def _Fitcurve(self):
+        t,y=self.data
+        p_est, err_est=curve_fit(self._fitfunc, t, y,
+                                p0=self.p0, bounds=self.bounds, maxfev=100000)
+        self._popt = p_est
+        self._pcov = err_est
+        self._error = np.sqrt(np.diag(err_est))
+
+    def Plot_Fit(self):
+        t,y=self.data
+        plt.plot(t,y,'rx')
+        plt.plot(t,self._fitfunc(t,*self._popt),'k--')
+        plt.show()
+
+    @property
+    def error(self):
+        '''standard deviation errors on the parameters '''
+        return self._error
+
+
 class T1_Fit():
     '''Fit T1'''
 
