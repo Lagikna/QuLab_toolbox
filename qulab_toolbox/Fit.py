@@ -111,7 +111,7 @@ class Ramsey_Fit(BaseFit):
         return Tphi_e
 
 
-class Spinecho_Fit():
+class Spinecho_Fit(BaseFit):
     '''Fit spinecho'''
 
     def _fitfunc(self,t,A,B,T2E):
