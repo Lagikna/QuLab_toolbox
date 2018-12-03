@@ -1,20 +1,54 @@
 import numpy as np
 from qulab.waveform import *
 
-class Xgate():
-    ''' X gate: Gauss,amplitude varied'''
+#Created by hanzhikun
+#Created date:2018.11.22
+#Data Input:
+#1.para         :Gaussian width,awg_freq,amplitude,IM_phas,IM_amp
+#2.delay        :Move the Waveform 'delay' time(unit in us)
+#Attention the right side of the waveform is at time 0.
+#3.theta        :phase angle for different rotation angle
+#4.range        :generate data from range(detail in qulab.waveform)
+#5.samplerate   :generate data same as the awg samplerate
+#Data Output:
+#Waveform data For IQ mixer.
+class xy_gauss():
+    ''' XY gate: Gauss;with DRAG'''
 
-    def __init__(self,para):
+    def __init__(self,para,delay,theta=0,alpha=0,range=[0,50.0],samplerate=2.0e9):
         self.para=para
+        self.delay=delay
+        self.range=range
+        self.theta=theta
+        self.alpha=alpha
+        self.samplerate=samplerate/1.0e6
+
         self._sqAI=None
         self._sqAQ=None
+        self._I=None
+        self._Q=None
+        self.len=None
 
     def _gate(self):
-        _cell=(Gaussian(self.para[0])>>(self.para[0]/2))*(DC(1,self.para[0]))
-        _sqAI= _cell*Sin(2*np.pi*self.para[1])*self.para[2]
-        _sqAQ= _cell*Sin(2*np.pi*self.para[1],np.deg2rad(self.para[3]))*self.para[2]*self.para[4]
-        self._sqAI=_sqAI
-        self._sqAQ=_sqAQ
+        #create basic gauss waveform & DRAG_gauss
+        _cell=(Gaussian(self.para[0])<<(self.para[0]/2))
+        self.len=self.para[0]/(4*np.sqrt(2*np.log(2)))
+        _drag_gauss=(Drag_gauss(self.para[0],self.samplerate)<<(self.para[0]/2))
+
+        #mutiply with Sin wave(differ phase for differ gate) and gauss DRAG.(alpha modify the drag parameter)
+        _sqAI= (((_cell*Sin(2*np.pi*self.para[1],np.mod(np.deg2rad(self.theta),360.0))*self.para[2])+\
+        (_drag_gauss*Sin(2*np.pi*self.para[1],np.mod(np.deg2rad(self.theta)+90.0,360.0))*self.para[2]*self.alpha))*\
+        (DC(1,self.para[0])<<self.para[0]))>>self.delay
+
+        _sqAQ= (((_cell*Sin(2*np.pi*self.para[1],np.mod(np.deg2rad(self.para[3]+self.theta),360.0))*self.para[2]*self.para[4])+\
+        (_drag_gauss*Sin(2*np.pi*self.para[1],np.mod(np.deg2rad(self.para[3]+self.theta)+90.0,360.0))*self.para[2]*self.para[4]*self.alpha))*\
+        (DC(1,self.para[0])<<self.para[0]))>>self.delay
+
+        #generate gate (detail see qulab.waveform)
+        _I=_sqAI.set_range(self.range[0],self.range[1]).generateData(sampleRate=(self.samplerate))
+        _Q=_sqAQ.set_range(self.range[0],self.range[1]).generateData(sampleRate=(self.samplerate))
+        self._sqAI=_I
+        self._sqAQ=_Q
         return self._sqAI,self._sqAQ
 
     @property
@@ -22,65 +56,29 @@ class Xgate():
         self._gate()
         return self._sqAI,self._sqAQ
 
-class Ygate():
-    ''' Y gate: Gauss,amplitude varied'''
+class z_square():
+    ''' DC gate:'''
 
-    def __init__(self,para):
-        self.para=para
-        self._sqAI=None
-        self._sqAQ=None
+    def __init__(self,len,amp,delay,range=[0,50.0],samplerate=2.0e9):
+        self.len=len
+        self.amp=amp
+        self.delay=delay
+        self.range=range
+        self.samplerate=samplerate/1.0e6
+        self._sqA=None
+        self._I=None
 
     def _gate(self):
-        _cell=(Gaussian(self.para[0])>>(self.para[0]/2))*(DC(1,self.para[0]))
-        _sqAI= _cell*Sin(2*np.pi*self.para[1],np.pi/2)*self.para[2]
-        _sqAQ= _cell*Sin(2*np.pi*self.para[1],np.mod(np.deg2rad(self.para[3]+np.pi/2),360))*self.para[2]*self.para[4]
-        self._sqAI=_sqAI
-        self._sqAQ=_sqAQ
-        return self._sqAI,self._sqAQ
+        _sqA=(DC(1,self.len)>>(self.delay-self.len))*self.amp
+        self._I=_sqA.set_range(self.range[0],self.range[1]).generateData(sampleRate=self.samplerate)
+        self._sqA=self._I
 
     @property
     def wave(self):
         self._gate()
-        return self._sqAI,self._sqAQ
+        return self._sqA
 
-class nXgate():
-    ''' -X gate: Gauss,amplitude varied'''
-
-    def __init__(self,para):
-        self.para=para
-        self._sqAI=None
-        self._sqAQ=None
-
-    def _gate(self):
-        _cell=(Gaussian(self.para[0])>>(self.para[0]/2))*(DC(1,self.para[0]))
-        _sqAI= _cell*Sin(2*np.pi*self.para[1],np.pi)*self.para[2]
-        _sqAQ= _cell*Sin(2*np.pi*self.para[1],np.mod(np.deg2rad(self.para[3]+np.pi),360))*self.para[2]*self.para[4]
-        self._sqAI=_sqAI
-        self._sqAQ=_sqAQ
-        return self._sqAI,self._sqAQ
-
-    @property
-    def wave(self):
-        self._gate()
-        return self._sqAI,self._sqAQ
-
-class nYgate():
-    ''' -Y gate: Gauss,amplitude varied'''
-
-    def __init__(self,para):
-        self.para=para
-        self._sqAI=None
-        self._sqAQ=None
-
-    def _gate(self):
-        _cell=(Gaussian(self.para[0])>>(self.para[0]/2))*(DC(1,self.para[0]))
-        _sqAI= _cell*Sin(2*np.pi*self.para[1],np.pi*3/2)*self.para[2]
-        _sqAQ= _cell*Sin(2*np.pi*self.para[1],np.mod(np.deg2rad(self.para[3]+np.pi*3/2),360))*self.para[2]*self.para[4]
-        self._sqAI=_sqAI
-        self._sqAQ=_sqAQ
-        return self._sqAI,self._sqAQ
-
-class X_drag_gate():
+class xy_drag_gate():
     ''' X gate with DRAG calibration'''
 
     def __init__(self,para,beta):
