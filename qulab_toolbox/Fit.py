@@ -77,6 +77,7 @@ class Rabi_Fit(BaseFit):
     @property
     def rabi_freq_error(self):
         '''rabi frequency error'''
+        A,B,C,lmda,Tr = self._popt
         A_e,B_e,C_e,lmda_e,Tr_e = self._error
         rabi_freq_e=np.abs(2*np.pi/(lmda**2))*lmda_e
         return rabi_freq_e
