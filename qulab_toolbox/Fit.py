@@ -47,6 +47,11 @@ class T1_Fit(BaseFit):
         A,B,T1=self._popt
         return T1
 
+    @property
+    def T1_error(self):
+        A_e,B_e,T1_e=self._error
+        return T1_e
+
 
 class Rabi_Fit(BaseFit):
     '''Fit rabi'''
@@ -70,6 +75,13 @@ class Rabi_Fit(BaseFit):
         return rabi_freq
 
     @property
+    def rabi_freq_error(self):
+        '''rabi frequency error'''
+        A_e,B_e,C_e,lmda_e,Tr_e = self._error
+        rabi_freq_e=np.abs(2*np.pi/(lmda**2))*lmda_e
+        return rabi_freq_e
+
+    @property
     def PPlen(self):
         '''Pi Pulse Length, equal 1/2 lambda'''
         A,B,C,lmda,Tr = self._popt
@@ -84,24 +96,34 @@ class Ramsey_Fit(BaseFit):
         self._T1=T1
         super(Ramsey_Fit, self).__init__(data=data,**kw)
 
-    def _fitfunc(self,t,A,B,T_phi,delta):
-        y=A*np.exp(-t/2/self._T1-np.square(t/T_phi))*np.cos(delta*t)+B
+    def _fitfunc(self,t,A,B,Tphi,delta):
+        y=A*np.exp(-t/2/self._T1-np.square(t/Tphi))*np.cos(delta*t)+B
         return y
 
     @property
-    def T_phi(self):
-        A,B,T_phi,delta = self._popt
-        return T_phi
+    def Tphi(self):
+        A,B,Tphi,delta = self._popt
+        return Tphi
+
+    @property
+    def Tphi_error(self):
+        A_e,B_e,Tphi_e,delta_e=self._error
+        return Tphi_e
 
 
 class Spinecho_Fit():
     '''Fit spinecho'''
 
-    def _fitfunc(self,t,A,B,T_2E):
-        y=A*np.exp(-t/T_2E)+B
+    def _fitfunc(self,t,A,B,T2E):
+        y=A*np.exp(-t/T2E)+B
         return y
 
     @property
-    def T_2E(self):
-        A,B,T_2E = self._popt
+    def T2E(self):
+        A,B,T2E = self._popt
         return T_2E
+
+    @property
+    def T2E_error(self):
+        A_e,B_e,T2E_e=self._error
+        return T2E_e
