@@ -8,25 +8,24 @@ class BaseFit(object):
     def __init__(self, data, **kw):
         super(BaseFit, self).__init__()
         self.data=data
-        self._kw=kw
-        self._Fitcurve()
+        self._Fitcurve(**kw)
 
-    def _fitfunc(self, t, A ,B ,T1):
+    def _fitfunc(self, t, A, B, T1):
         '''this an example: T1 fit function '''
         y=A*np.exp(-t/T1)+B
         return y
 
-    def _Fitcurve(self):
+    def _Fitcurve(self, **kw):
         t,y=self.data
-        popt, pcov=curve_fit(self._fitfunc, t, y, maxfev=100000, **self._kw)
+        popt, pcov=curve_fit(self._fitfunc, t, y, maxfev=100000, **kw)
         self._popt = popt
         self._pcov = pcov
         self._error = np.sqrt(np.diag(pcov))
 
-    def Plot_Fit(self):
+    def plot(self, fmt1='rx', fmt2='k--', opt1={}, opt2={}):
         t,y=self.data
-        plt.plot(t,y,'rx')
-        plt.plot(t,self._fitfunc(t,*self._popt),'k--')
+        plt.plot(t, y, fmt1, **opt1)
+        plt.plot(t, self._fitfunc(t,*self._popt), fmt2, **opt2)
         plt.show()
 
     @property
@@ -34,6 +33,32 @@ class BaseFit(object):
         '''standard deviation errors on the parameters '''
         return self._error
 
+class Cauchy_Fit(BaseFit):
+    '''Fit peak'''
+
+    def _fitfunc(self,t,A,t0,FWHM):
+        y=A*FWHM/((t-t0)**2+FWHM**2)/np.pi
+        return y
+
+    @property
+    def t0(self):
+        A,t0,FWHM=self._popt
+        return t0
+
+    @property
+    def t0_error(self):
+        A_e,t0_e,FWHM_e=self._error
+        return t0_e
+
+    @property
+    def FWHM(self):
+        A,t0,FWHM=self._popt
+        return FWHM
+
+    @property
+    def FWHM_error(self):
+        A_e,t0_e,FWHM_e=self._error
+        return FWHM_e
 
 class T1_Fit(BaseFit):
     '''Fit T1'''
