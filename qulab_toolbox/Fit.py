@@ -96,7 +96,7 @@ class Rabi_Fit(BaseFit):
         '''rabi frequency'''
         A,B,C,lmda,Tr = self._popt
         # lambda 默认单位为us, 所以返回频率为MHz
-        rabi_freq=np.abs(2*np.pi/lmda)
+        rabi_freq=np.abs(1/lmda)
         return rabi_freq
 
     @property
@@ -104,7 +104,7 @@ class Rabi_Fit(BaseFit):
         '''rabi frequency error'''
         A,B,C,lmda,Tr = self._popt
         A_e,B_e,C_e,lmda_e,Tr_e = self._error
-        rabi_freq_e=np.abs(2*np.pi/(lmda**2))*lmda_e
+        rabi_freq_e=np.abs(1/(lmda**2))*lmda_e
         return rabi_freq_e
 
     @property

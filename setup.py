@@ -17,7 +17,7 @@ requirements = [
     'numpy>=1.13.3',
     'scipy>=1.0.0',
     'matplotlib>=2.1.0',
-    'QuLab>=0.4.0',
+    # 'QuLab>=0.4.0',
 ]
 
 if platform.system() == 'Windows':
