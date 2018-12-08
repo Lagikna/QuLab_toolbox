@@ -4,10 +4,10 @@ from scipy.optimize import curve_fit
 
 
 class BaseFit(object):
-    """BaseFit class"""
+    """BaseFit class, based on scipy.optimiz.curve_fit """
     def __init__(self, data, **kw):
         super(BaseFit, self).__init__()
-        self.data=data
+        self.data=np.array(data)
         self._Fitcurve(**kw)
 
     def _fitfunc(self, t, A, B, T1):
@@ -32,6 +32,12 @@ class BaseFit(object):
     def error(self):
         '''standard deviation errors on the parameters '''
         return self._error
+
+    @property
+    def params(self):
+        '''optimized parameters '''
+        return self._popt
+
 
 class Cauchy_Fit(BaseFit):
     '''Fit peak'''
@@ -59,6 +65,15 @@ class Cauchy_Fit(BaseFit):
     def FWHM_error(self):
         A_e,t0_e,FWHM_e=self._error
         return FWHM_e
+
+
+class Linear_Fit(BaseFit):
+    '''Simple Linear Fit'''
+
+    def _fitfunc(self,t,A,B):
+        y= A * t + B
+        return y
+
 
 class T1_Fit(BaseFit):
     '''Fit T1'''
