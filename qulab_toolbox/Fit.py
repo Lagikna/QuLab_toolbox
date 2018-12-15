@@ -137,19 +137,24 @@ class Ramsey_Fit(BaseFit):
         self._T1=T1
         super(Ramsey_Fit, self).__init__(data=data,**kw)
 
-    def _fitfunc(self,t,A,B,Tphi,delta):
-        y=A*np.exp(-t/2/self._T1-np.square(t/Tphi))*np.cos(delta*t)+B
+    def _fitfunc(self,t,A,B,C,Tphi,delta):
+        y=A*np.exp(-t/2/self._T1-np.square(t/Tphi))*np.cos(delta*t+C)+B
         return y
 
     @property
     def Tphi(self):
-        A,B,Tphi,delta = self._popt
+        A,B,C,Tphi,delta = self._popt
         return Tphi
 
     @property
     def Tphi_error(self):
-        A_e,B_e,Tphi_e,delta_e=self._error
+        A_e,B_e,C_e,Tphi_e,delta_e=self._error
         return Tphi_e
+
+    @property
+    def detuning(self):
+        A,B,C,Tphi,delta = self._popt
+        return delta/2/np.pi
 
 
 class Spinecho_Fit(BaseFit):
