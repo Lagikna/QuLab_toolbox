@@ -35,7 +35,8 @@ class vIQmixer(object):
         return self
 
     def set_Cali(self,cali_array):
-        '''cali_array: 2x3 array, 两行分别代表I/Q的校准系数；
+        '''cali_array: 2x3 array ;
+        两行分别代表I/Q的校准系数；
         三列分别代表I/Q的 振幅系数、振幅补偿、相位补偿'''
         cali_array = np.array(cali_array)
         self.cali_array = cali_array
@@ -50,7 +51,7 @@ class vIQmixer(object):
         self.__I = scale_i * self._I + offset_i
         self.__Q = scale_q * self._Q + offset_q
 
-    def _up_coversion(self):
+    def _up_conversion(self):
         if isinstance(self._I,Waveform) and isinstance(self._Q,Waveform):
             self.__Cali_IQ()
             cali_phi_i, cali_phi_q = self._cali_phi
@@ -60,11 +61,12 @@ class vIQmixer(object):
         else:
             raise TypeError("I/Q aren't Waveform ! ")
 
-    def up_coversion(self,LO_freq,I,Q=0,cali_array=None):
+    def up_conversion(self,LO_freq,I=0,Q=0,cali_array=None):
+        '''快速配置并上变频'''
         self.set_LO(LO_freq)
         self.set_IQ(I,Q)
         if cali_array == None:
             cali_array=[[1,0,0],[1,0,0]]
         self.set_Cali(cali_array)
-        self._up_coversion()
+        self._up_conversion()
         return self._RF
