@@ -75,6 +75,43 @@ class Linear_Fit(BaseFit):
         return y
 
 
+class RB_Fit(BaseFit):
+    '''Randomized Benchmarking Fit'''
+
+    def __init__(self,data, d=2, **kw):
+        '''d: d-dimensional system, for the Clifford group, d=2'''
+        super(RB_Fit, self).__init__(data=data,**kw)
+        self.d = d
+
+    def _fitfunc(self,t,A,B,p):
+        y=A*p**t+B
+        return y
+
+    @property
+    def p(self):
+        A,B,p=self._popt
+        return p
+
+    @property
+    def p_error(self):
+        A_e,B_e,p_e=self._error
+        return p_e
+
+    @property
+    def F(self):
+        '''Fidelity '''
+        d = self.d
+        A,B,p=self._popt
+        F=1-(1-p)*(1-d)/d
+        return F
+
+    @property
+    def F_error(self):
+        A_e,B_e,p_e=self._error
+        F_e=p_e*(1-d)/d
+        return F_e
+
+
 class T1_Fit(BaseFit):
     '''Fit T1'''
 
