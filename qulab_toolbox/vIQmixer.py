@@ -19,12 +19,15 @@ class vIQmixer(object):
         self.cali_array = None
         self._RF = None
 
-    def set_IQ(self,I,Q=0):
+    def set_IQ(self,I=0,Q=0):
         self._I = I
-        if Q == 0:
+        self._Q = Q
+        if I==0 and Q==0:
+            raise TypeError("Both I/Q aren't Waveform !")
+        elif I == 0:
+            self._I = 0*Q
+        elif Q == 0:
             self._Q = 0*I
-        else:
-            self._Q = Q
         return self
 
     def set_LO(self,LO_freq):
@@ -41,13 +44,11 @@ class vIQmixer(object):
         self._cali_phi = cali_array[:,2]
         return self
 
-
     def __Cali_IQ(self):
         scale_i, offset_i = self._cali_amp_I
         scale_q, offset_q = self._cali_amp_Q
         self.__I = scale_i * self._I + offset_i
         self.__Q = scale_q * self._Q + offset_q
-
 
     def _up_coversion(self):
         if isinstance(self._I,Waveform) and isinstance(self._Q,Waveform):
