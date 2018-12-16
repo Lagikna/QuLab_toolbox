@@ -15,7 +15,7 @@ class vIQmixer(object):
         self.__Q = None
         self._cali_amp_I = (1,0)
         self._cali_amp_Q = (1,0)
-        self._cali_phi = (0,0)
+        self._cali_phi = (0,0) #弧度
         self.cali_array = None
         self._RF = None
 
@@ -23,7 +23,7 @@ class vIQmixer(object):
         self._I = I
         self._Q = Q
         if I==0 and Q==0:
-            raise TypeError("Both I/Q aren't Waveform !")
+            raise TypeError("Both I/Q are 0, not waveform !")
         elif I == 0:
             self._I = 0*Q
         elif Q == 0:
@@ -34,15 +34,17 @@ class vIQmixer(object):
         self.LO_freq = LO_freq
         return self
 
-    def set_Cali(self,cali_array):
+    def set_Cali(self,cali_array=None):
         '''cali_array: 2x3 array ;
         两行分别代表I/Q的校准系数；
-        三列分别代表I/Q的 振幅系数、振幅补偿、相位补偿'''
+        三列分别代表I/Q的 振幅系数、振幅补偿、相位补偿(角度)'''
+        if cali_array is None:
+            cali_array=[[1,0,0],[1,0,0]]
         cali_array = np.array(cali_array)
         self.cali_array = cali_array
         self._cali_amp_I = cali_array[0,:2]
         self._cali_amp_Q = cali_array[1,:2]
-        self._cali_phi = cali_array[:,2]
+        self._cali_phi = cali_array[:,2]*np.pi/180  #转为弧度
         return self
 
     def __Cali_IQ(self):
@@ -63,10 +65,6 @@ class vIQmixer(object):
 
     def up_conversion(self,LO_freq,I=0,Q=0,cali_array=None):
         '''快速配置并上变频'''
-        self.set_LO(LO_freq)
-        self.set_IQ(I,Q)
-        if cali_array == None:
-            cali_array=[[1,0,0],[1,0,0]]
-        self.set_Cali(cali_array)
+        self.set_LO(LO_freq).set_IQ(I,Q).set_Cali(cali_array)
         self._up_conversion()
         return self._RF
