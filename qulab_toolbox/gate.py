@@ -38,13 +38,13 @@ class xy_gauss():
         _drag_gauss=(Drag_gauss(self.para[0],self.samplerate)<<(self.para[0]/2))
 
         #mutiply with Sin wave(differ phase for differ gate) and gauss DRAG.(alpha modify the drag parameter)
-        _sqAI= (((_cell*Sin(2*np.pi*self.para[1],np.mod(np.deg2rad(self.theta),360.0))*self.para[2])+\
-        (_drag_gauss*Sin(2*np.pi*self.para[1],np.mod(np.deg2rad(self.theta)+90.0,360.0))*self.para[2]*self.alpha))*\
-        (DC(1,self.para[0])<<self.para[0]))>>self.delay
+        _sqAI= (((_cell>>self.delay)*Sin(2*np.pi*self.para[1],np.mod(np.deg2rad(self.theta),360.0))*self.para[2])+\
+        ((_drag_gauss>>self.delay)*Sin(2*np.pi*self.para[1],np.mod(np.deg2rad(self.theta)+90.0,360.0))*self.para[2]*self.alpha))*\
+        (DC(1,self.para[0])>>(self.delay-self.para[0]))
 
-        _sqAQ= (((_cell*Sin(2*np.pi*self.para[1],np.mod(np.deg2rad(self.para[3]+self.theta),360.0))*self.para[2]*self.para[4])+\
-        (_drag_gauss*Sin(2*np.pi*self.para[1],np.mod(np.deg2rad(self.para[3]+self.theta)+90.0,360.0))*self.para[2]*self.para[4]*self.alpha))*\
-        (DC(1,self.para[0])<<self.para[0]))>>self.delay
+        _sqAQ= (((_cell>>self.delay)*Sin(2*np.pi*self.para[1],np.mod(np.deg2rad(self.para[3]+self.theta),360.0))*self.para[2]*self.para[4])+\
+        ((_drag_gauss>>self.delay)*Sin(2*np.pi*self.para[1],np.mod(np.deg2rad(self.para[3]+self.theta)+90.0,360.0))*self.para[2]*self.para[4]*self.alpha))*\
+        (DC(1,self.para[0])>>>>(self.delay-self.para[0]))
 
         #generate gate (detail see qulab.waveform)
         _I=_sqAI.set_range(self.range[0],self.range[1]).generateData(sampleRate=(self.samplerate))
