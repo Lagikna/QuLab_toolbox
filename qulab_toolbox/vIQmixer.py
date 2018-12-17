@@ -20,31 +20,36 @@ class vIQmixer(object):
         self._RF = None
 
     def set_IQ(self,I=0,Q=0):
+        '''I/Q, at least one waveform class'''
         self._I = I
         self._Q = Q
-        if I==0 and Q==0:
-            raise TypeError("Both I/Q are 0, not waveform !")
-        elif I == 0:
+        if I == 0:
             self._I = 0*Q
         elif Q == 0:
             self._Q = 0*I
-        return self
+        if isinstance(self._I,Waveform) and isinstance(self._Q,Waveform):
+            return self
+        else:
+            raise TypeError("I/Q aren't Waveform ! ")
 
     def set_LO(self,LO_freq):
         self.LO_freq = LO_freq
         return self
 
-    def set_Cali(self,cali_array=None):
+    def set_Cali(self,cali_array=None,DEG=True):
         '''cali_array: 2x3 array ;
         两行分别代表I/Q的校准系数；
-        三列分别代表I/Q的 振幅系数、振幅补偿、相位补偿(角度)'''
-        if cali_array is None:
-            cali_array=[[1,0,0],[1,0,0]]
-        cali_array = np.array(cali_array)
-        self.cali_array = cali_array
-        self._cali_amp_I = cali_array[0,:2]
-        self._cali_amp_Q = cali_array[1,:2]
-        self._cali_phi = cali_array[:,2]*np.pi/180  #转为弧度
+        三列分别代表I/Q的 振幅系数、振幅补偿、相位补偿(默认角度)'''
+        if cali_array is not None:
+            cali_array = np.array(cali_array)
+            self.cali_array = cali_array
+            self._cali_amp_I = cali_array[0,:2]
+            self._cali_amp_Q = cali_array[1,:2]
+            if DEG:
+                self._cali_phi = cali_array[:,2]*np.pi/180  #转为弧度
+            else:
+                self._cali_phi = cali_array[:,2]
+
         return self
 
     def __Cali_IQ(self):
