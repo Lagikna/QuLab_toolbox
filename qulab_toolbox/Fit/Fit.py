@@ -4,10 +4,10 @@ from scipy.optimize import curve_fit
 
 
 class BaseFit(object):
-    """BaseFit class"""
+    """BaseFit class, based on scipy.optimiz.curve_fit """
     def __init__(self, data, **kw):
         super(BaseFit, self).__init__()
-        self.data=data
+        self.data=np.array(data)
         self._Fitcurve(**kw)
 
     def _fitfunc(self, t, A, B, T1):
@@ -32,6 +32,12 @@ class BaseFit(object):
     def error(self):
         '''standard deviation errors on the parameters '''
         return self._error
+
+    @property
+    def params(self):
+        '''optimized parameters '''
+        return self._popt
+
 
 class Cauchy_Fit(BaseFit):
     '''Fit peak'''
@@ -59,6 +65,62 @@ class Cauchy_Fit(BaseFit):
     def FWHM_error(self):
         A_e,t0_e,FWHM_e=self._error
         return FWHM_e
+
+
+class Linear_Fit(BaseFit):
+    '''Simple Linear Fit'''
+
+    def _fitfunc(self,t,A,B):
+        y= A * t + B
+        return y
+
+    @property
+    def A(self):
+        A,B=self._popt
+        return A
+
+    @property
+    def B(self):
+        A,B=self._popt
+        return B
+
+class RBM_Fit(BaseFit):
+    '''Randomized Benchmarking Fit'''
+
+    def __init__(self,data, d=2, **kw):
+        '''d: d-dimensional system, for the Clifford group, d=2'''
+        super(RBM_Fit, self).__init__(data=data,**kw)
+        self.d = d
+
+    def _fitfunc(self,t,A,B,p):
+        y=A*p**t+B
+        return y
+
+    @property
+    def p(self):
+        A,B,p=self._popt
+        return p
+
+    @property
+    def p_error(self):
+        A_e,B_e,p_e=self._error
+        return p_e
+
+    @property
+    def F(self):
+        '''Fidelity '''
+        d = self.d
+        A,B,p=self._popt
+        F=1-(1-p)*(1-d)/d
+        return F
+
+    @property
+    def F_error(self):
+        d = self.d
+        A_e,B_e,p_e=self._error
+        F_e=p_e*(1-d)/d
+        return F_e
+
 
 class T1_Fit(BaseFit):
     '''Fit T1'''
@@ -96,7 +158,7 @@ class Rabi_Fit(BaseFit):
         '''rabi frequency'''
         A,B,C,lmda,Tr = self._popt
         # lambda 默认单位为us, 所以返回频率为MHz
-        rabi_freq=np.abs(2*np.pi/lmda)
+        rabi_freq=np.abs(1/lmda)
         return rabi_freq
 
     @property
@@ -104,7 +166,7 @@ class Rabi_Fit(BaseFit):
         '''rabi frequency error'''
         A,B,C,lmda,Tr = self._popt
         A_e,B_e,C_e,lmda_e,Tr_e = self._error
-        rabi_freq_e=np.abs(2*np.pi/(lmda**2))*lmda_e
+        rabi_freq_e=np.abs(1/(lmda**2))*lmda_e
         return rabi_freq_e
 
     @property
@@ -122,19 +184,24 @@ class Ramsey_Fit(BaseFit):
         self._T1=T1
         super(Ramsey_Fit, self).__init__(data=data,**kw)
 
-    def _fitfunc(self,t,A,B,Tphi,delta):
-        y=A*np.exp(-t/2/self._T1-np.square(t/Tphi))*np.cos(delta*t)+B
+    def _fitfunc(self,t,A,B,C,Tphi,delta):
+        y=A*np.exp(-t/2/self._T1-np.square(t/Tphi))*np.cos(delta*t+C)+B
         return y
 
     @property
     def Tphi(self):
-        A,B,Tphi,delta = self._popt
+        A,B,C,Tphi,delta = self._popt
         return Tphi
 
     @property
     def Tphi_error(self):
-        A_e,B_e,Tphi_e,delta_e=self._error
+        A_e,B_e,C_e,Tphi_e,delta_e=self._error
         return Tphi_e
+
+    @property
+    def detuning(self):
+        A,B,C,Tphi,delta = self._popt
+        return delta/2/np.pi
 
 
 class Spinecho_Fit(BaseFit):
@@ -153,44 +220,3 @@ class Spinecho_Fit(BaseFit):
     def T_2E(self):
         self._Fitcurve()
         return self._T_2E
-
-class Line_Fit():
-    '''Fit Line
-    '''
-
-    def __init__(self,data,p0=None,bounds=(-inf, inf)):
-        self.data=data
-        self._A=None
-        self._B=None
-        self.p0=p0
-        self.bounds=bounds
-
-    def _fitfunc(self,t,A,B):
-        y=A*t+B
-        return y
-
-    def _Fitcurve(self):
-        t,y=self.data
-        p_est, err_est=curve_fit(self._fitfunc, t, y,
-                                p0=self.p0, bounds=self.bounds, maxfev=100000)
-        [A,B]=p_est
-        self._A=A
-        self._B=B
-        return p_est, err_est
-
-    def Plot_Fit(self):
-        t,y=self.data
-        p_est, err_est=self._Fitcurve()
-        plt.plot(t,y,'rx')
-        plt.plot(t,self._fitfunc(t,*p_est),'k--')
-        plt.show()
-
-    @property
-    def K(self):
-        self._Fitcurve()
-        return self._A
-
-    @property
-    def b(self):
-        self._Fitcurve()
-        return self._B
