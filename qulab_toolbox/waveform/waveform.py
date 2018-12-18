@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-## copy from qulab.Waveform
+## copy from qulab.Waveform  2018.12.16
 
 import copy
 import numpy as np
