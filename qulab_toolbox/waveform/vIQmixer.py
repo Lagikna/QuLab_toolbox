@@ -62,8 +62,13 @@ class vIQmixer(object):
         if isinstance(self._I,Waveform) and isinstance(self._Q,Waveform):
             self.__Cali_IQ()
             cali_phi_i, cali_phi_q = self._cali_phi
-            rf_wf = self.__I * Sin(2*np.pi*self.LO_freq, cali_phi_i) + \
-                    self.__Q * Cos(2*np.pi*self.LO_freq, cali_phi_q)
+            # rf_wf = self.__I * Sin(2*np.pi*self.LO_freq, cali_phi_i) + \
+            #         self.__Q * Cos(2*np.pi*self.LO_freq, cali_phi_q)
+            _timeFunc=lambda x : self.__I._timeFunc(x) * np.sin(2*np.pi*self.LO_freq*x+cali_phi_i) + \
+                                 self.__Q._timeFunc(x) * np.cos(2*np.pi*self.LO_freq*x+cali_phi_q)
+            rf_wf = Waveform()
+            rf_wf._domain = self.__I._domain
+            rf_wf._timeFunc=_timeFunc
             self._RF = rf_wf
         else:
             raise TypeError("I/Q aren't Waveform ! ")
