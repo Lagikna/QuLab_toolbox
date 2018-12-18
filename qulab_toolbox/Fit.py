@@ -158,7 +158,7 @@ class Line_Fit():
     '''Fit Line
     '''
 
-    def __init__(self,data,p0=None,bounds=(-np.inf, np.inf)):
+    def __init__(self,data,p0=None,bounds=(-inf, inf)):
         self.data=data
         self._A=None
         self._B=None
