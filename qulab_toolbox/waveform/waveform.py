@@ -272,7 +272,7 @@ class Sinc(Waveform):
         super(Sinc, self).__init__(domain=(-np.inf, np.inf))
         self.timeFunc = lambda t: sinc(a*t)
 
-__all__ = ['Waveform', 'DC', 'Interpolation', 'Step', 'Gaussian', 'Sin', 'Cos', 'Sinc']
+__all__ = ['Waveform', 'Blank', 'DC', 'Interpolation', 'Step', 'Gaussian', 'Sin', 'Cos', 'Sinc']
 
 if __name__ == "__main__":
     w = (0.7*Step(0.7)<<1) - (0.2*Step(0.2)) - (0.5*Step(0)>>1)

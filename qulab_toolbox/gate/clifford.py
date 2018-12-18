@@ -79,7 +79,7 @@ def matrix_compare(a,b):
 
 def rbm_seq(size):
     '''随机RBM的波形序列'''
-    i_r = [idx for idx in np.random.randint(len(clifford_group), size=size)]
+    i_r = [idx for idx in np.random.randint(len(clifford_group), size=int(size))]
     mat=reduce(np.dot, [clifford_group[i] for i in reversed(i_r)])
     mat_inv=np.array(np.matrix(mat).H)
     inv_index=find_index(mat_inv,clifford_group)
