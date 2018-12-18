@@ -208,6 +208,15 @@ class Waveform():
         x, y = self.generateData(sampleRate, with_x=True)
         plt.plot(x, y)
 
+
+class Blank(Waveform):
+    '''产生一个给定长度的0波形，长度可以为负或0'''
+    def __init__(self, length=0):
+        self.start = min(0,length)
+        self.stop = max(0,length)
+        super(Blank, self).__init__(domain=(self.start, self.stop))
+
+
 class DC(Waveform):
     def __init__(self, offset, length=0, range=(0,1)):
         if length <= 0:

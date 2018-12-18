@@ -60,6 +60,9 @@ clifford_group_singlequbit_index=[    ['I'],
                                       ['X2n','Y2p'],
                                  ]
 
+clifford_group = clifford_group_singlequbit
+clifford_index = clifford_group_singlequbit_index
+
 def find_index(a,b):
     for i in np.arange(len(b)):
         if matrix_compare(a,b[i]) or matrix_compare(-a,b[i])\
@@ -75,8 +78,7 @@ def matrix_compare(a,b):
     return True
 
 def rbm_seq(size):
-    clifford_group = clifford_group_singlequbit
-    clifford_index = clifford_group_singlequbit_index
+    '''随机RBM的波形序列'''
     i_r = [idx for idx in np.random.randint(len(clifford_group), size=size)]
     mat=reduce(np.dot, [clifford_group[i] for i in reversed(i_r)])
     mat_inv=np.array(np.matrix(mat).H)
