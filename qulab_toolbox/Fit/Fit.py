@@ -224,6 +224,6 @@ class Spinecho_Fit(BaseFit):
         return T_2E
 
     @property
-    def T_2E(self):
-        self._Fitcurve()
-        return self._T_2E
+    def T2E_error(self):
+        A_e,B_e,T2E_e=self._error
+        return T2E_e
