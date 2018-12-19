@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-## copy from qulab.Waveform
+## copy from qulab.Waveform  2018.12.16
 
 import copy
 import numpy as np
@@ -208,6 +208,15 @@ class Waveform():
         x, y = self.generateData(sampleRate, with_x=True)
         plt.plot(x, y)
 
+
+class Blank(Waveform):
+    '''产生一个给定长度的0波形，长度可以为负或0'''
+    def __init__(self, length=0):
+        self.start = min(0,length)
+        self.stop = max(0,length)
+        super(Blank, self).__init__(domain=(self.start, self.stop))
+
+
 class DC(Waveform):
     def __init__(self, offset, length=0, range=(0,1)):
         if length <= 0:
@@ -263,7 +272,7 @@ class Sinc(Waveform):
         super(Sinc, self).__init__(domain=(-np.inf, np.inf))
         self.timeFunc = lambda t: sinc(a*t)
 
-__all__ = ['Waveform', 'DC', 'Interpolation', 'Step', 'Gaussian', 'Sin', 'Cos', 'Sinc']
+__all__ = ['Waveform', 'Blank', 'DC', 'Interpolation', 'Step', 'Gaussian', 'Sin', 'Cos', 'Sinc']
 
 if __name__ == "__main__":
     w = (0.7*Step(0.7)<<1) - (0.2*Step(0.2)) - (0.5*Step(0)>>1)

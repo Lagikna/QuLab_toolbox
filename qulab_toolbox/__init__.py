@@ -1,3 +1,4 @@
-from .Fit import T1_Fit, Rabi_Fit, Ramsey_Fit, Spinecho_Fit
-from .gate import xy_gauss,z_square
-from .vIQmixer import vIQmixer
+from .Fit import *
+# if use waveform module, please import it specially
+from .wavedata import *
+from .gate import *
