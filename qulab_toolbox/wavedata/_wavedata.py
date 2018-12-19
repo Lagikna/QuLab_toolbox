@@ -52,6 +52,7 @@ class Wavedata(object):
         else:
             self.data = self.data[:n]
             self.len = length
+        return self
 
     def __pos__(self):
         return self
