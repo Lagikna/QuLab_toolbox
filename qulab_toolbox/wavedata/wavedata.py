@@ -212,3 +212,13 @@ class Cos(Wavedata):
         super(Cos, self).__init__(domain=(0,width),sampleRate=sampleRate)
 
 __all__ = ['Wavedata', 'Blank', 'DC', 'Gaussian', 'Sin', 'Cos',]
+
+
+if __name__ == "__main__":
+    a=Sin(w=1, width=10, phi=0, sampleRate=100000)
+    b=Gaussian(2,sampleRate=100000)
+    c=Wavedata(sampleRate=100000)
+
+    m=0.5*a|c|b|c|b+1|c|a+0.5
+    m.plot()
+    plt.show()
