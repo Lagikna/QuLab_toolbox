@@ -42,6 +42,9 @@ class Wavedata(object):
         size = int(self.len*self.sRate)
         return size
 
+    def data(self):
+        return self.data
+
     def setLen(self,length):
         n = int(abs(length)*self.sRate)
         l = self.size()
@@ -166,7 +169,7 @@ class Wavedata(object):
                 w.len = length
                 return w
         else:
-            return other / self
+            return (1/other) * self
 
     def __rtruediv__(self, v):
         w = Wavedata()
