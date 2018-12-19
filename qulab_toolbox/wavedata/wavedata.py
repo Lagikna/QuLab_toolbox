@@ -10,12 +10,15 @@ class Wavedata(object):
         self._domain = domain
         self.len = domain[1] - domain[0]
         self.sampleRate = sampleRate
-        self._timeFunc = lambda x : 0
+        # self._timeFunc = lambda x : 0
         self.data = self.generateData()
 
     def _mask(self, x):
         mask = (x>self._domain[0])*(x<self._domain[1])
         return mask
+
+    def _timeFunc(self, x):
+        return 0
 
     def __timeFunc(self, x):
         return self._mask(x)*self._timeFunc(x)
@@ -35,9 +38,13 @@ class Wavedata(object):
     def len(self):
         return self.len
 
+    def size(self):
+        size = int(self.len*self.sampleRate)
+        return size
+
     def setLen(self,length):
         n = int(abs(length)*self.sampleRate)
-        l = int(self.len*self.sampleRate)
+        l = self.size()
         if n >l:
             append_data=np.zeros(n-l)
             self.data = np.append(self.data, append_data)
@@ -172,3 +179,36 @@ class Wavedata(object):
         x = np.arange(dt/2, self.len, dt)
         y = self.data
         plt.plot(x, y)
+
+
+class Blank(Wavedata):
+    '''产生一个给定长度的0波形，长度可以为负或0'''
+    def __init__(self, width=0, sampleRate=1e2):
+        self.start = min(0,width)
+        self.stop = max(0,width)
+        super(Blank, self).__init__(domain=(self.start, self.stop),sampleRate=sampleRate)
+
+class DC(Wavedata):
+    def __init__(self, offset, width=0, sampleRate=1e2):
+        self.start = min(0,width)
+        self.stop = max(0,width)
+        self._timeFunc = lambda x : offset
+        super(Blank, self).__init__(domain=(self.start, self.stop),sampleRate=sampleRate)
+
+class Gaussian(Wavedata):
+    def __init__(self, width, sampleRate=1e2):
+        c = width/(4*np.sqrt(2*np.log(2)))
+        self._timeFunc = lambda x: np.exp(-0.5*(x/c)**2)
+        super(Gaussian, self).__init__(domain=(-0.5*width,0.5*width),sampleRate=sampleRate)
+
+class Sin(Wavedata):
+    def __init__(self, w, phi=0, width=0, sampleRate=1e2):
+        self._timeFunc = lambda t: np.sin(w*t+phi)
+        super(Sin, self).__init__(domain=(0,width),sampleRate=sampleRate)
+
+class Cos(Wavedata):
+    def __init__(self, w, phi=0, width=0, sampleRate=1e2):
+        self._timeFunc = lambda t: np.cos(w*t+phi)
+        super(Cos, self).__init__(domain=(0,width),sampleRate=sampleRate)
+
+__all__ = ['Wavedata', 'Blank', 'DC', 'Gaussian', 'Sin', 'Cos',]
