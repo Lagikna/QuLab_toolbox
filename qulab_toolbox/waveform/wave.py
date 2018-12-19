@@ -8,8 +8,9 @@ class Wave(object):
     def __init__(self,domain=(0,1)):
         '''domain: 定义域，即采点的区域，不能是inf'''
         self.domain = domain
-        self.Func = lambda x : 0
-        self._shift = 0
+        self.Func_list = []
+        self.mask_list = []
+        self.shift_list = []
 
     def _mask(self, x):
         mask = (x>self.domain[0])*(x<self.domain[1])

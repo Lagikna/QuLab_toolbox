@@ -84,6 +84,13 @@ class Linear_Fit(BaseFit):
         A,B=self._popt
         return B
 
+
+class Sin_Fit(BaseFit):
+    def _fitfunc(self, t, A, B, w, phi):
+        y=A*np.sin(w*t+phi)+B
+        return y
+
+
 class RBM_Fit(BaseFit):
     '''Randomized Benchmarking Fit'''
 
@@ -111,7 +118,7 @@ class RBM_Fit(BaseFit):
         '''Fidelity '''
         d = self.d
         A,B,p=self._popt
-        F=1-(1-p)*(1-d)/d
+        F=1-(1-p)*(d-1)/d
         return F
 
     @property
