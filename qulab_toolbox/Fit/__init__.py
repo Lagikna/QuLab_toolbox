@@ -1,1 +1,1 @@
-from .Fit import *
+from ._Fit import *

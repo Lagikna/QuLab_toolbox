@@ -1,5 +1,5 @@
 import numpy as np
-from .waveform import *
+from ._waveform import *
 
 
 class vIQmixer(object):

@@ -1,2 +1,2 @@
-from .waveform import *
+from ._waveform import *
 from .vIQmixer import vIQmixer
