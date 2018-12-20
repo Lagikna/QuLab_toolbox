@@ -56,6 +56,16 @@ class Wavedata(object):
             self.data = self.data[:n]
         return self
 
+    def setSize(self,size):
+        n = round(size)
+        s = self.size
+        if n > s:
+            append_data=np.zeros(n-s)
+            self.data = np.append(self.data, append_data)
+        else:
+            self.data = self.data[:n]
+        return self
+
     def __pos__(self):
         return self
     #
@@ -200,10 +210,11 @@ class Blank(Wavedata):
         super(Blank, self).__init__(domain=(self.start, self.stop),sRate=sRate)
 
 class DC(Wavedata):
-    def __init__(self, offset=1, width=0, sRate=1e2):
+    '''产生一个给定长度的方波脉冲，高度为1'''
+    def __init__(self, width=0, sRate=1e2):
         self.start = min(0,width)
         self.stop = max(0,width)
-        self._timeFunc = lambda x : offset
+        self._timeFunc = lambda x : 1
         super(DC, self).__init__(domain=(self.start, self.stop),sRate=sRate)
 
 class Gaussian(Wavedata):

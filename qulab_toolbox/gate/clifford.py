@@ -78,10 +78,12 @@ def matrix_compare(a,b):
     return True
 
 # 需要随机的门在 clifford_group 中的索引 的列表，默认包含所有24个门
-random_group=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
+default_random_group=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
 
-def rbm_seq(size,group=random_group):
+def rbm_seq(size,group=None):
     '''随机RBM的波形序列'''
+    if group is None:
+        group = default_random_group
     i_r = [group[idx] for idx in np.random.randint(len(group), size=int(size))]
     mat=reduce(np.dot, [clifford_group[i] for i in reversed(i_r)])
     mat_inv=np.array(np.matrix(mat).H)
