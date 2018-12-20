@@ -65,19 +65,11 @@ clifford_index = clifford_group_singlequbit_index
 
 def find_index(a,b):
     for i,v in enumerate(b):
-        # if matrix_compare(a,b[i]) or matrix_compare(-a,b[i])\
-        #  or matrix_compare(1j*a,b[i]) or matrix_compare(-1j*a,b[i]):
         if any([matrix_compare(f*a, v) for f in [1,-1,1j,-1j]]):
             return i
 
 def matrix_compare(a,b):
-    # row,column=a.shape
-    # for i in np.arange(row):
-    #     for j in np.arange(column):
-    #         if np.abs(np.real(a[i][j]-b[i][j]))>1e-5 or np.abs(np.imag(a[i][j]-b[i][j]))>1e-5:
-    #             return False
-    # return True
-    return np.where(abs(a-b)<1e-5, True, False).all() 
+    return np.where(abs(a-b)<1e-5, True, False).all()
 
 
 

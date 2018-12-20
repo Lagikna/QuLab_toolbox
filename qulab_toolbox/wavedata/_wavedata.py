@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.fftpack import fft,ifft
 
+__all__ = ['Wavedata', 'Blank', 'DC', 'Gaussian', 'CosPulse', 'Sin', 'Cos',]
 
 class Wavedata(object):
 
@@ -222,6 +223,11 @@ class Gaussian(Wavedata):
         self._timeFunc = lambda x: np.exp(-0.5*(x/c)**2)
         super(Gaussian, self).__init__(domain=(-0.5*width,0.5*width),sRate=sRate)
 
+class CosPulse(Wavedata):
+    def __init__(self, width, sRate=1e2):
+        self._timeFunc = lambda x: (np.cos(2*np.pi/width*x)+1)/2
+        super(CosPulse, self).__init__(domain=(-0.5*width,0.5*width),sRate=sRate)
+
 class Sin(Wavedata):
     def __init__(self, w, phi=0, width=0, sRate=1e2):
         self._timeFunc = lambda t: np.sin(w*t+phi)
@@ -232,14 +238,14 @@ class Cos(Wavedata):
         self._timeFunc = lambda t: np.cos(w*t+phi)
         super(Cos, self).__init__(domain=(0,width),sRate=sRate)
 
-__all__ = ['Wavedata', 'Blank', 'DC', 'Gaussian', 'Sin', 'Cos',]
-
 
 if __name__ == "__main__":
     a=Sin(w=1, width=10, phi=0, sRate=100000)
     b=Gaussian(2,sRate=100000)
     c=Wavedata(sRate=100000)
 
-    m=0.5*a|c|b|c|b+1|c|a+0.5
+    m=(0.5*a|c|b|c|b+1|c|a+0.5).setLen(20)>>5
+    n=m.convolve(b)
     m.plot()
+    n.plot()
     plt.show()
