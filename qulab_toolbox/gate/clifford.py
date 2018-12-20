@@ -1,6 +1,9 @@
 import numpy as np
 from functools import reduce
 
+__all__=['clifford_group','clifford_index','find_index','matrix_compare',
+        'rbm_seq','check_seq']
+
 clifford_group_singlequbit=np.array([
     [ [  1,  0] , [  0, 1] ],
     [ [  0,-1j] , [-1j, 0] ],
@@ -96,6 +99,3 @@ def check_seq(seq):
     _res = [matrix_compare(f*check_mat,clifford_group[0]) for f in [1,-1,1j,-1j]]
     res = any(_res)
     return res
-
-__all__=['clifford_group','clifford_index','find_index','matrix_compare',
-        'rbm_seq','check_seq']
