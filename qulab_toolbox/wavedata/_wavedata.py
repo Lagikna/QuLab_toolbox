@@ -1,14 +1,15 @@
 import copy
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.fftpack import fft,ifft
 
+__all__ = ['Wavedata', 'Blank', 'DC', 'Gaussian', 'CosPulse', 'Sin', 'Cos',]
 
 class Wavedata(object):
 
     def __init__(self,domain=(0,1),sRate=1e2):
         '''domain: 定义域，即采点的区域，不能是inf'''
         self._domain = domain
-        self.len = domain[1] - domain[0]
         self.sRate = sRate
         # self._timeFunc = lambda x : 0
         self.data = self.generateData()
@@ -31,27 +32,39 @@ class Wavedata(object):
         return data
 
     def _blank(self,length=0):
-        n = int(abs(length)*self.sRate)
+        n = round(abs(length)*self.sRate)
         data = np.zeros(n)
         return data
 
+    @property
     def len(self):
-        return self.len
+        length = self.size/self.sRate
+        return length
 
+    @property
     def size(self):
-        size = int(self.len*self.sRate)
+        size = len(self.data)
         return size
 
     def setLen(self,length):
-        n = int(abs(length)*self.sRate)
-        l = self.size()
-        if n >l:
-            append_data=np.zeros(n-l)
+        n = round(abs(length)*self.sRate)
+        s = self.size
+        if n > s:
+            append_data=np.zeros(n-s)
             self.data = np.append(self.data, append_data)
-            self.len = length
         else:
             self.data = self.data[:n]
-            self.len = length
+        return self
+
+    def setSize(self,size):
+        n = round(size)
+        s = self.size
+        if n > s:
+            append_data=np.zeros(n-s)
+            self.data = np.append(self.data, append_data)
+        else:
+            self.data = self.data[:n]
+        return self
 
     def __pos__(self):
         return self
@@ -59,14 +72,12 @@ class Wavedata(object):
     def __neg__(self):
         w = Wavedata()
         w.sRate = self.sRate
-        w.len = self.len
         w.data = -self.data
         return w
 
     def __abs__(self):
         w = Wavedata()
         w.sRate = self.sRate
-        w.len = self.len
         w.data = np.abs(self.data)
         return w
 
@@ -75,9 +86,8 @@ class Wavedata(object):
             raise Error('shift is too large !')
         w = Wavedata()
         w.sRate = self.sRate
-        w.len = self.len
         shift_data=self._blank(abs(t))
-        left_n = int((self.len-abs(t))*self.sRate)
+        left_n = self.size-len(shift_data)
         if t>0:
             w.data = np.append(shift_data, self.data[:left_n])
         else:
@@ -95,7 +105,6 @@ class Wavedata(object):
         else:
             w = Wavedata()
             w.sRate = self.sRate
-            w.len = self.len + other.len
             w.data = np.append(self.data,other.data)
             return w
 
@@ -110,7 +119,6 @@ class Wavedata(object):
                 self.setLen(length)
                 other.setLen(length)
                 w.data = self.data + other.data
-                w.len = length
                 return w
         else:
             return other + self
@@ -118,7 +126,6 @@ class Wavedata(object):
     def __radd__(self, v):
         w = Wavedata()
         w.sRate = self.sRate
-        w.len = self.len
         w.data = self.data +v
         return w
 
@@ -139,7 +146,6 @@ class Wavedata(object):
                 self.setLen(length)
                 other.setLen(length)
                 w.data = self.data * other.data
-                w.len = length
                 return w
         else:
             return other * self
@@ -147,7 +153,6 @@ class Wavedata(object):
     def __rmul__(self, v):
         w = Wavedata()
         w.sRate = self.sRate
-        w.len = self.len
         w.data = self.data * v
         return w
 
@@ -162,16 +167,32 @@ class Wavedata(object):
                 self.setLen(length)
                 other.setLen(length)
                 w.data = self.data / other.data
-                w.len = length
                 return w
         else:
-            return other / self
+            return (1/other) * self
 
     def __rtruediv__(self, v):
         w = Wavedata()
         w.sRate = self.sRate
-        w.len = self.len
         w.data = v / self.data
+        return w
+
+    def convolve(self, other, mode='full'):
+        if isinstance(other,Wavedata):
+            _kernal = other.data
+        elif isinstance(other,(np.ndarray,list,tuple)):
+            _kernal = other
+        k_sum = sum(_kernal)
+        kernal = _kernal / k_sum
+        w = Wavedata()
+        w.sRate = self.sRate
+        w.data = np.convolve(self.data,kernal,mode)
+        return w
+
+    def FFT(self):
+        w = Wavedata()
+        w.sRate = self.size/self.sRate
+        w.data =abs(fft(self.data))
         return w
 
     def plot(self):
@@ -189,17 +210,23 @@ class Blank(Wavedata):
         super(Blank, self).__init__(domain=(self.start, self.stop),sRate=sRate)
 
 class DC(Wavedata):
-    def __init__(self, offset=1, width=0, sRate=1e2):
+    '''产生一个给定长度的方波脉冲，高度为1'''
+    def __init__(self, width=0, sRate=1e2):
         self.start = min(0,width)
         self.stop = max(0,width)
-        self._timeFunc = lambda x : offset
-        super(Blank, self).__init__(domain=(self.start, self.stop),sRate=sRate)
+        self._timeFunc = lambda x : 1
+        super(DC, self).__init__(domain=(self.start, self.stop),sRate=sRate)
 
 class Gaussian(Wavedata):
     def __init__(self, width, sRate=1e2):
         c = width/(4*np.sqrt(2*np.log(2)))
         self._timeFunc = lambda x: np.exp(-0.5*(x/c)**2)
         super(Gaussian, self).__init__(domain=(-0.5*width,0.5*width),sRate=sRate)
+
+class CosPulse(Wavedata):
+    def __init__(self, width, sRate=1e2):
+        self._timeFunc = lambda x: (np.cos(2*np.pi/width*x)+1)/2
+        super(CosPulse, self).__init__(domain=(-0.5*width,0.5*width),sRate=sRate)
 
 class Sin(Wavedata):
     def __init__(self, w, phi=0, width=0, sRate=1e2):
@@ -211,14 +238,14 @@ class Cos(Wavedata):
         self._timeFunc = lambda t: np.cos(w*t+phi)
         super(Cos, self).__init__(domain=(0,width),sRate=sRate)
 
-__all__ = ['Wavedata', 'Blank', 'DC', 'Gaussian', 'Sin', 'Cos',]
-
 
 if __name__ == "__main__":
     a=Sin(w=1, width=10, phi=0, sRate=100000)
     b=Gaussian(2,sRate=100000)
     c=Wavedata(sRate=100000)
 
-    m=0.5*a|c|b|c|b+1|c|a+0.5
+    m=(0.5*a|c|b|c|b+1|c|a+0.5).setLen(20)>>5
+    n=m.convolve(b)
     m.plot()
+    n.plot()
     plt.show()

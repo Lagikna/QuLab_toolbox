@@ -28,7 +28,7 @@ class vIQmixer(object):
         elif Q == 0:
             self._Q = 0*I
         if isinstance(self._I,Wavedata) and isinstance(self._Q,Wavedata):
-            if self._I.len==self._Q.len and self._I.sRate==self._Q.sRate:
+            if self._I.size==self._Q.size and self._I.sRate==self._Q.sRate:
                 self.len = self._I.len
                 self.sRate = self._I.sRate
                 return self
