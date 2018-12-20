@@ -9,7 +9,6 @@ class Wavedata(object):
     def __init__(self,domain=(0,1),sRate=1e2):
         '''domain: 定义域，即采点的区域，不能是inf'''
         self._domain = domain
-        # self.len = domain[1] - domain[0]
         self.sRate = sRate
         # self._timeFunc = lambda x : 0
         self.data = self.generateData()

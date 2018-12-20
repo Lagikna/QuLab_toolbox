@@ -7,19 +7,19 @@ clifford_group_singlequbit=np.array([
     [ [  0, -1] , [  1, 0] ],
     [ [-1j,  0] , [  0,1j] ],
 
-    [ [1/np.sqrt(2),-1j/np.sqrt(2)] , [-1j/np.sqrt(2),1/np.sqrt(2)] ],
-    [ [1/np.sqrt(2),1j/np.sqrt(2)] , [1j/np.sqrt(2),1/np.sqrt(2)] ],
-    [ [1/np.sqrt(2),-1/np.sqrt(2)] , [1/np.sqrt(2),1/np.sqrt(2)] ],
-    [ [1/np.sqrt(2),1/np.sqrt(2)] , [-1/np.sqrt(2),1/np.sqrt(2)] ],
+    [ [1/np.sqrt(2), -1j/np.sqrt(2)] , [-1j/np.sqrt(2), 1/np.sqrt(2)] ],
+    [ [1/np.sqrt(2),  1j/np.sqrt(2)] , [ 1j/np.sqrt(2), 1/np.sqrt(2)] ],
+    [ [1/np.sqrt(2),  -1/np.sqrt(2)] , [  1/np.sqrt(2), 1/np.sqrt(2)] ],
+    [ [1/np.sqrt(2),   1/np.sqrt(2)] , [ -1/np.sqrt(2), 1/np.sqrt(2)] ],
     [ [1/np.sqrt(2)-1j/np.sqrt(2),0] , [0,1/np.sqrt(2)+1j/np.sqrt(2)] ],
     [ [1/np.sqrt(2)+1j/np.sqrt(2),0] , [0,1/np.sqrt(2)-1j/np.sqrt(2)] ],
 
-    [ [-1j/np.sqrt(2),-1j/np.sqrt(2)] , [-1j/np.sqrt(2),+1j/np.sqrt(2)] ],
-    [ [1j/np.sqrt(2),-1j/np.sqrt(2)] , [-1j/np.sqrt(2),-1j/np.sqrt(2)] ],
-    [ [-1j/np.sqrt(2),-1/np.sqrt(2)] , [1/np.sqrt(2),1j/np.sqrt(2)] ],
-    [ [1j/np.sqrt(2),-1/np.sqrt(2)] , [1/np.sqrt(2),-1j/np.sqrt(2)] ],
-    [ [0,-1/np.sqrt(2)-1j/np.sqrt(2)] , [1/np.sqrt(2)-1j/np.sqrt(2),0] ],
-    [  [0,-1/np.sqrt(2)+1j/np.sqrt(2)] , [1/np.sqrt(2)+1j/np.sqrt(2),0] ],
+    [ [-1j/np.sqrt(2),-1j/np.sqrt(2)] , [-1j/np.sqrt(2), 1j/np.sqrt(2)] ],
+    [ [ 1j/np.sqrt(2),-1j/np.sqrt(2)] , [-1j/np.sqrt(2),-1j/np.sqrt(2)] ],
+    [ [-1j/np.sqrt(2), -1/np.sqrt(2)] , [  1/np.sqrt(2), 1j/np.sqrt(2)] ],
+    [ [ 1j/np.sqrt(2), -1/np.sqrt(2)] , [  1/np.sqrt(2),-1j/np.sqrt(2)] ],
+    [ [0,-1/np.sqrt(2)-1j/np.sqrt(2)] , [1/np.sqrt(2)-1j/np.sqrt(2), 0] ],
+    [ [0,-1/np.sqrt(2)+1j/np.sqrt(2)] , [1/np.sqrt(2)+1j/np.sqrt(2), 0] ],
 
     [ [ 0.5-0.5j, -0.5-0.5j ],  [  0.5-0.5j,  0.5+0.5j ] ],
     [ [ 0.5+0.5j, -0.5+0.5j ],  [  0.5+0.5j,  0.5-0.5j ] ],
@@ -64,18 +64,22 @@ clifford_group = clifford_group_singlequbit
 clifford_index = clifford_group_singlequbit_index
 
 def find_index(a,b):
-    for i in np.arange(len(b)):
-        if matrix_compare(a,b[i]) or matrix_compare(-a,b[i])\
-         or matrix_compare(1j*a,b[i]) or matrix_compare(-1j*a,b[i]):
+    for i,v in enumerate(b):
+        # if matrix_compare(a,b[i]) or matrix_compare(-a,b[i])\
+        #  or matrix_compare(1j*a,b[i]) or matrix_compare(-1j*a,b[i]):
+        if any([matrix_compare(f*a, v) for f in [1,-1,1j,-1j]]):
             return i
 
 def matrix_compare(a,b):
-    row,column=a.shape
-    for i in np.arange(row):
-        for j in np.arange(column):
-            if np.abs(np.real(a[i][j]-b[i][j]))>1e-5 or np.abs(np.imag(a[i][j]-b[i][j]))>1e-5:
-                return False
-    return True
+    # row,column=a.shape
+    # for i in np.arange(row):
+    #     for j in np.arange(column):
+    #         if np.abs(np.real(a[i][j]-b[i][j]))>1e-5 or np.abs(np.imag(a[i][j]-b[i][j]))>1e-5:
+    #             return False
+    # return True
+    return np.where(abs(a-b)<1e-5, True, False).all() 
+
+
 
 # 需要随机的门在 clifford_group 中的索引 的列表，默认包含所有24个门
 default_random_group=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
