@@ -2,10 +2,10 @@ import numpy as np
 from functools import reduce
 
 clifford_group_singlequbit=np.array([
-    [ [1,0] , [0,1] ],
-    [ [0,-1j] , [-1j,0] ],
-    [ [0,-1] , [1,0] ],
-    [ [-1j,0] , [0,1j] ],
+    [ [  1,  0] , [  0, 1] ],
+    [ [  0,-1j] , [-1j, 0] ],
+    [ [  0, -1] , [  1, 0] ],
+    [ [-1j,  0] , [  0,1j] ],
 
     [ [1/np.sqrt(2),-1j/np.sqrt(2)] , [-1j/np.sqrt(2),1/np.sqrt(2)] ],
     [ [1/np.sqrt(2),1j/np.sqrt(2)] , [1j/np.sqrt(2),1/np.sqrt(2)] ],
@@ -77,12 +77,18 @@ def matrix_compare(a,b):
                 return False
     return True
 
-def rbm_seq(size):
+# 需要随机的门在 clifford_group 中的索引 的列表，默认包含所有24个门
+random_group=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
+
+def rbm_seq(size,group=random_group):
     '''随机RBM的波形序列'''
-    i_r = [idx for idx in np.random.randint(len(clifford_group), size=int(size))]
+    i_r = [group[idx] for idx in np.random.randint(len(group), size=int(size))]
     mat=reduce(np.dot, [clifford_group[i] for i in reversed(i_r)])
     mat_inv=np.array(np.matrix(mat).H)
     inv_index=find_index(mat_inv,clifford_group)
     i_r.append(inv_index)
     index_seq=reduce(np.append,[clifford_index[i] for i in i_r])
     return index_seq
+
+__all__=['clifford_group','clifford_index','find_index','matrix_compare',
+        'rbm_seq']
