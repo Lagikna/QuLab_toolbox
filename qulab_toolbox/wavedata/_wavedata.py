@@ -189,10 +189,19 @@ class Wavedata(object):
         w.data = np.convolve(self.data,kernal,mode)
         return w
 
-    def FFT(self):
+    def FFT(self, mode='amp'):
         w = Wavedata()
         w.sRate = self.size/self.sRate
-        w.data =abs(fft(self.data))
+        if mode == 'amp':
+            w.data =np.abs(fft(self.data))
+        elif mode == 'phase':
+            w.data =np.angle(fft(self.data),deg=True)
+        elif mode == 'real':
+            w.data =np.real(fft(self.data))
+        elif mode == 'imag':
+            w.data =np.imag(fft(self.data))
+        elif mode == 'complex':
+            w.data =fft(self.data)
         return w
 
     def plot(self):
