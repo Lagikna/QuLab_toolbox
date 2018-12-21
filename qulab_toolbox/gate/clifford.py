@@ -75,7 +75,6 @@ def matrix_compare(a,b):
     return np.where(abs(a-b)<1e-5, True, False).all()
 
 
-
 # 需要随机的门在 clifford_group 中的索引 的列表，默认包含所有24个门
 default_random_group=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
 
