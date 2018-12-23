@@ -48,13 +48,7 @@ class Wavedata(object):
 
     def setLen(self,length):
         n = round(abs(length)*self.sRate)
-        s = self.size
-        if n > s:
-            append_data=np.zeros(n-s)
-            self.data = np.append(self.data, append_data)
-        else:
-            self.data = self.data[:n]
-        return self
+        return self.setSize(n)
 
     def setSize(self,size):
         n = round(size)
@@ -178,6 +172,7 @@ class Wavedata(object):
         return w
 
     def convolve(self, other, mode='full'):
+        '''mode: full, same, valid'''
         if isinstance(other,Wavedata):
             _kernal = other.data
         elif isinstance(other,(np.ndarray,list,tuple)):
