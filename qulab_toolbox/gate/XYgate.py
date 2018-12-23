@@ -1,7 +1,7 @@
 import numpy as np
 from ..wavedata import *
 
-def gen_XY_by_index(index, pi_len, half_pi_len, pi_factor, half_pi_factor,sRate, TYPE=Gaussian):
+def gen_XY_by_index(index, pi_len, half_pi_len, pi_factor, half_pi_factor, sRate, TYPE=Gaussian):
     '''通过给定的参数和索引，产生相应的波形脉冲；
     index : I/X/Y/X2p/X2n/Y2p/Y2n
     TYPE : 为由 width，sRate 两个参数决定的Wavedata类波形，现支持 DC,Gaussian,CosPulse
