@@ -165,7 +165,7 @@ class Wavedata(object):
         w.data = v / self.data
         return w
 
-    def convolve(self, other, mode='full'):
+    def convolve(self, other, mode='same'):
         '''mode: full, same, valid'''
         if isinstance(other,Wavedata):
             _kernal = other.data
@@ -200,39 +200,15 @@ class Wavedata(object):
         plt.plot(x, y, *arg, **kw)
 
 
-# class Blank(Wavedata):
-#     '''产生一个给定长度的0波形，长度可以为负或0'''
-#     def __init__(self, width=0, sRate=1e2):
-#         timeFunc = lambda x: 0
-#         domain=(0, width)
-#         data = Wavedata.generateData(timeFunc,domain,sRate)
-#         super(Blank, self).__init__(data,sRate)
-
 def Blank(width=0, sRate=1e2):
     timeFunc = lambda x: 0
     domain=(0, width)
     return Wavedata.init(timeFunc,domain,sRate)
 
-# class DC(Wavedata):
-#     '''产生一个给定长度的方波脉冲，高度为1'''
-#     def __init__(self, width=0, sRate=1e2):
-#         timeFunc = lambda x : 1
-#         domain=(0, width)
-#         data = Wavedata.generateData(timeFunc,domain,sRate)
-#         super(DC, self).__init__(data,sRate)
-
 def DC(width=0, sRate=1e2):
     timeFunc = lambda x: 1
     domain=(0, width)
     return Wavedata.init(timeFunc,domain,sRate)
-
-# class Gaussian(Wavedata):
-#     def __init__(self, width, sRate=1e2):
-#         c = width/(4*np.sqrt(2*np.log(2)))
-#         timeFunc = lambda x: np.exp(-0.5*(x/c)**2)
-#         domain=(-0.5*width,0.5*width)
-#         data = Wavedata.generateData(timeFunc,domain,sRate)
-#         super(Gaussian, self).__init__(data,sRate)
 
 def Gaussian(width=1, sRate=1e2):
     c = width/(4*np.sqrt(2*np.log(2)))
@@ -240,36 +216,15 @@ def Gaussian(width=1, sRate=1e2):
     domain=(-0.5*width,0.5*width)
     return Wavedata.init(timeFunc,domain,sRate)
 
-# class CosPulse(Wavedata):
-#     def __init__(self, width, sRate=1e2):
-#         timeFunc = lambda x: (np.cos(2*np.pi/width*x)+1)/2
-#         domain=(-0.5*width,0.5*width)
-#         data = Wavedata.generateData(timeFunc,domain,sRate)
-#         super(CosPulse, self).__init__(data,sRate)
-
 def CosPulse(width=1, sRate=1e2):
     timeFunc = lambda x: (np.cos(2*np.pi/width*x)+1)/2
     domain=(-0.5*width,0.5*width)
     return Wavedata.init(timeFunc,domain,sRate)
 
-# class Sin(Wavedata):
-#     def __init__(self, w, phi=0, width=0, sRate=1e2):
-#         timeFunc = lambda t: np.sin(w*t+phi)
-#         domain=(0,width)
-#         data = Wavedata.generateData(timeFunc,domain,sRate)
-#         super(Sin, self).__init__(data,sRate)
-
 def Sin(w, phi=0, width=0, sRate=1e2):
     timeFunc = lambda t: np.sin(w*t+phi)
     domain=(0,width)
     return Wavedata.init(timeFunc,domain,sRate)
-
-# class Cos(Wavedata):
-#     def __init__(self, w, phi=0, width=0, sRate=1e2):
-#         timeFunc = lambda t: np.cos(w*t+phi)
-#         domain=(0,width)
-#         data = Wavedata.generateData(timeFunc,domain,sRate)
-#         super(Cos, self).__init__(data,sRate)
 
 def Cos(w, phi=0, width=0, sRate=1e2):
     timeFunc = lambda t: np.cos(w*t+phi)
@@ -278,9 +233,9 @@ def Cos(w, phi=0, width=0, sRate=1e2):
 
 
 if __name__ == "__main__":
-    a=Sin(w=1, width=10, phi=0, sRate=100000)
-    b=Gaussian(2,sRate=100000)
-    c=Blank(1,sRate=100000)
+    a=Sin(w=1, width=10, phi=0, sRate=1000)
+    b=Gaussian(2,sRate=1000)
+    c=Blank(1,sRate=1000)
 
     m=(0.5*a|c|b|c|b+1|c|a+0.5).setLen(20)>>5
     n=m.convolve(b)
