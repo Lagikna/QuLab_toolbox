@@ -12,37 +12,18 @@ class Wavedata(object):
         self.sRate = sRate
 
     @staticmethod
-    def init(timeFunc, domain=(0,1), sRate=1e2):
+    def generateData(timeFunc, domain=(0,1), sRate=1e2):
         _domain = min(domain), max(domain)
         _timeFunc = lambda x: timeFunc(x) * (x > _domain[0]) * ( x < _domain[1])
         dt=1/sRate
         x = np.arange(_domain[0]+dt/2, _domain[1], dt)
         data = np.array(_timeFunc(x))
-        return data,sRate
+        return data
 
-    # def __init(self,domain=(0,1),sRate=1e2):
-    #     '''domain: 定义域，即采点的区域，不能是inf'''
-    #     self._domain = domain
-    #     self.sRate = sRate
-    #     # self._timeFunc = lambda x : 0
-    #     self.data = self._generateData()
-    #
-    # def _mask(self, x):
-    #     mask = (x>self._domain[0])*(x<self._domain[1])
-    #     return mask
-    #
-    # def _timeFunc(self, x):
-    #     return 0
-    #
-    # def __timeFunc(self, x):
-    #     return self._mask(x)*self._timeFunc(x)
-    #
-    # def _generateData(self):
-    #     dt=1/self.sRate
-    #     x = np.arange(self._domain[0]+dt/2, self._domain[1], dt)
-    #     _data = self.__timeFunc(x)
-    #     data = np.array(_data)
-    #     return data
+    @classmethod
+    def init(cls, timeFunc, domain=(0,1), sRate=1e2):
+        data = cls.generateData(timeFunc,domain,sRate)
+        return cls(data,sRate)
 
     def _blank(self,length=0):
         n = round(abs(length)*self.sRate)
@@ -212,57 +193,88 @@ class Wavedata(object):
             w.data =fft(self.data)
         return w
 
-    def plot(self):
+    def plot(self, *arg, **kw):
         dt=1/self.sRate
         x = np.arange(dt/2, self.len, dt)
         y = self.data
-        plt.plot(x, y)
+        plt.plot(x, y, *arg, **kw)
 
 
-class Blank(Wavedata):
-    '''产生一个给定长度的0波形，长度可以为负或0'''
-    def __init__(self, width=0, sRate=1e2):
-        timeFunc = lambda x: 0
-        domain=(0, width)
-        data,sRate = super(Blank, self).init(timeFunc,domain,sRate)
-        super(Blank, self).__init__(data,sRate)
+# class Blank(Wavedata):
+#     '''产生一个给定长度的0波形，长度可以为负或0'''
+#     def __init__(self, width=0, sRate=1e2):
+#         timeFunc = lambda x: 0
+#         domain=(0, width)
+#         data = Wavedata.generateData(timeFunc,domain,sRate)
+#         super(Blank, self).__init__(data,sRate)
 
-class DC(Wavedata):
-    '''产生一个给定长度的方波脉冲，高度为1'''
-    def __init__(self, width=0, sRate=1e2):
-        timeFunc = lambda x : 1
-        domain=(0, width)
-        data,sRate = super(DC, self).init(timeFunc,domain,sRate)
-        super(DC, self).__init__(data,sRate)
+def Blank(width=0, sRate=1e2):
+    timeFunc = lambda x: 0
+    domain=(0, width)
+    return Wavedata.init(timeFunc,domain,sRate)
 
-class Gaussian(Wavedata):
-    def __init__(self, width, sRate=1e2):
-        c = width/(4*np.sqrt(2*np.log(2)))
-        timeFunc = lambda x: np.exp(-0.5*(x/c)**2)
-        domain=(-0.5*width,0.5*width)
-        data,sRate = super(Gaussian, self).init(timeFunc,domain,sRate)
-        super(Gaussian, self).__init__(data,sRate)
+# class DC(Wavedata):
+#     '''产生一个给定长度的方波脉冲，高度为1'''
+#     def __init__(self, width=0, sRate=1e2):
+#         timeFunc = lambda x : 1
+#         domain=(0, width)
+#         data = Wavedata.generateData(timeFunc,domain,sRate)
+#         super(DC, self).__init__(data,sRate)
 
-class CosPulse(Wavedata):
-    def __init__(self, width, sRate=1e2):
-        timeFunc = lambda x: (np.cos(2*np.pi/width*x)+1)/2
-        domain=(-0.5*width,0.5*width)
-        data,sRate = super(CosPulse, self).init(timeFunc,domain,sRate)
-        super(CosPulse, self).__init__(data,sRate)
+def DC(width=0, sRate=1e2):
+    timeFunc = lambda x: 1
+    domain=(0, width)
+    return Wavedata.init(timeFunc,domain,sRate)
 
-class Sin(Wavedata):
-    def __init__(self, w, phi=0, width=0, sRate=1e2):
-        timeFunc = lambda t: np.sin(w*t+phi)
-        domain=(0,width)
-        data,sRate = super(Sin, self).init(timeFunc,domain,sRate)
-        super(Sin, self).__init__(data,sRate)
+# class Gaussian(Wavedata):
+#     def __init__(self, width, sRate=1e2):
+#         c = width/(4*np.sqrt(2*np.log(2)))
+#         timeFunc = lambda x: np.exp(-0.5*(x/c)**2)
+#         domain=(-0.5*width,0.5*width)
+#         data = Wavedata.generateData(timeFunc,domain,sRate)
+#         super(Gaussian, self).__init__(data,sRate)
 
-class Cos(Wavedata):
-    def __init__(self, w, phi=0, width=0, sRate=1e2):
-        timeFunc = lambda t: np.cos(w*t+phi)
-        domain=(0,width)
-        data,sRate = super(Cos, self).init(timeFunc,domain,sRate)
-        super(Cos, self).__init__(data,sRate)
+def Gaussian(width=1, sRate=1e2):
+    c = width/(4*np.sqrt(2*np.log(2)))
+    timeFunc = lambda x: np.exp(-0.5*(x/c)**2)
+    domain=(-0.5*width,0.5*width)
+    return Wavedata.init(timeFunc,domain,sRate)
+
+# class CosPulse(Wavedata):
+#     def __init__(self, width, sRate=1e2):
+#         timeFunc = lambda x: (np.cos(2*np.pi/width*x)+1)/2
+#         domain=(-0.5*width,0.5*width)
+#         data = Wavedata.generateData(timeFunc,domain,sRate)
+#         super(CosPulse, self).__init__(data,sRate)
+
+def CosPulse(width=1, sRate=1e2):
+    timeFunc = lambda x: (np.cos(2*np.pi/width*x)+1)/2
+    domain=(-0.5*width,0.5*width)
+    return Wavedata.init(timeFunc,domain,sRate)
+
+# class Sin(Wavedata):
+#     def __init__(self, w, phi=0, width=0, sRate=1e2):
+#         timeFunc = lambda t: np.sin(w*t+phi)
+#         domain=(0,width)
+#         data = Wavedata.generateData(timeFunc,domain,sRate)
+#         super(Sin, self).__init__(data,sRate)
+
+def Sin(w, phi=0, width=0, sRate=1e2):
+    timeFunc = lambda t: np.sin(w*t+phi)
+    domain=(0,width)
+    return Wavedata.init(timeFunc,domain,sRate)
+
+# class Cos(Wavedata):
+#     def __init__(self, w, phi=0, width=0, sRate=1e2):
+#         timeFunc = lambda t: np.cos(w*t+phi)
+#         domain=(0,width)
+#         data = Wavedata.generateData(timeFunc,domain,sRate)
+#         super(Cos, self).__init__(data,sRate)
+
+def Cos(w, phi=0, width=0, sRate=1e2):
+    timeFunc = lambda t: np.cos(w*t+phi)
+    domain=(0,width)
+    return Wavedata.init(timeFunc,domain,sRate)
 
 
 if __name__ == "__main__":
