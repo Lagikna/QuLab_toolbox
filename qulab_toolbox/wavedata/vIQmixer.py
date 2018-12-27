@@ -62,6 +62,7 @@ class vIQmixer(object):
         scale_q, offset_q = self._cali_amp_Q
         self.__I = scale_i * self._I + offset_i
         self.__Q = scale_q * self._Q + offset_q
+        return self
 
     def _up_conversion(self):
         if isinstance(self._I,Wavedata) and isinstance(self._Q,Wavedata):
@@ -70,11 +71,11 @@ class vIQmixer(object):
             rf_wf = self.__I * Sin(2*np.pi*self.LO_freq,cali_phi_i,self.len,self.sRate) + \
                     self.__Q * Cos(2*np.pi*self.LO_freq,cali_phi_q,self.len,self.sRate)
             self._RF = rf_wf
+            return self
         else:
             raise TypeError("I/Q aren't Wavedata ! ")
 
     def up_conversion(self,LO_freq,I=0,Q=0,cali_array=None):
         '''快速配置并上变频'''
-        self.set_LO(LO_freq).set_IQ(I,Q).set_Cali(cali_array)
-        self._up_conversion()
+        self.set_LO(LO_freq).set_IQ(I,Q).set_Cali(cali_array)._up_conversion()
         return self._RF
