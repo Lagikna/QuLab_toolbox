@@ -13,9 +13,11 @@ class Wavedata(object):
 
     @staticmethod
     def generateData(timeFunc, domain=(0,1), sRate=1e2):
-        _domain = min(domain), max(domain)
-        _timeFunc = lambda x: timeFunc(x) * (x > _domain[0]) * ( x < _domain[1])
+        length = int(np.around(abs(domain[1]-domain[0]) * sRate)) / sRate
+        _domain = min(domain), (min(domain)+length)
         dt=1/sRate
+        _timeFunc = lambda x: timeFunc(x) * (x > _domain[0]) * ( x < _domain[1])
+        # x = dt * np.array(range(size)) + _domain[0] + dt/2
         x = np.arange(_domain[0]+dt/2, _domain[1], dt)
         data = np.array(_timeFunc(x))
         return data
@@ -26,7 +28,7 @@ class Wavedata(object):
         return cls(data,sRate)
 
     def _blank(self,length=0):
-        n = round(abs(length)*self.sRate)
+        n = int(np.around(abs(length)*self.sRate))
         data = np.zeros(n)
         return data
 
@@ -41,11 +43,11 @@ class Wavedata(object):
         return size
 
     def setLen(self,length):
-        n = round(abs(length)*self.sRate)
+        n = int(np.around(abs(length)*self.sRate))
         return self.setSize(n)
 
     def setSize(self,size):
-        n = round(size)
+        n = int(np.around(size))
         s = self.size
         if n > s:
             append_data=np.zeros(n-s)
@@ -103,9 +105,9 @@ class Wavedata(object):
             else:
                 w = Wavedata()
                 w.sRate = self.sRate
-                length = max(self.len, other.len)
-                self.setLen(length)
-                other.setLen(length)
+                size = max(self.size, other.size)
+                self.setSize(size)
+                other.setSize(size)
                 w.data = self.data + other.data
                 return w
         else:
@@ -130,9 +132,9 @@ class Wavedata(object):
             else:
                 w = Wavedata()
                 w.sRate = self.sRate
-                length = max(self.len, other.len)
-                self.setLen(length)
-                other.setLen(length)
+                size = max(self.size, other.size)
+                self.setSize(size)
+                other.setSize(size)
                 w.data = self.data * other.data
                 return w
         else:
@@ -151,9 +153,9 @@ class Wavedata(object):
             else:
                 w = Wavedata()
                 w.sRate = self.sRate
-                length = max(self.len, other.len)
-                self.setLen(length)
-                other.setLen(length)
+                size = max(self.size, other.size)
+                self.setSize(size)
+                other.setSize(size)
                 w.data = self.data / other.data
                 return w
         else:
