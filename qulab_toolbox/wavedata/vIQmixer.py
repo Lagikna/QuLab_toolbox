@@ -45,16 +45,18 @@ class vIQmixer(object):
         '''cali_array: 2x3 array ;
         两行分别代表I/Q的校准系数；
         三列分别代表I/Q的 振幅系数、振幅补偿、相位补偿(默认角度)'''
-        if cali_array is not None:
-            cali_array = np.array(cali_array)
-            self.cali_array = cali_array
-            self._cali_amp_I = cali_array[0,:2]
-            self._cali_amp_Q = cali_array[1,:2]
-            if DEG:
-                self._cali_phi = cali_array[:,2]*np.pi/180  #转为弧度
-            else:
-                self._cali_phi = cali_array[:,2]
-
+        if cali_array is None:
+            cali_array = [[1,0,0],
+                          [1,0,0]]
+        _cali_array = np.array(cali_array)
+        self.cali_array = _cali_array
+        self._cali_amp_I = _cali_array[0,:2]
+        self._cali_amp_Q = _cali_array[1,:2]
+        if DEG:
+            self._cali_phi = _cali_array[:,2]*np.pi/180  #转为弧度
+        else:
+            self._cali_phi = _cali_array[:,2]
+        self.__Cali_IQ()
         return self
 
     def __Cali_IQ(self):
@@ -62,20 +64,17 @@ class vIQmixer(object):
         scale_q, offset_q = self._cali_amp_Q
         self.__I = scale_i * self._I + offset_i
         self.__Q = scale_q * self._Q + offset_q
+
+    def UpConversion(self):
+        '''需要先 set_IQ, set_LO, set_Cali, 再使用此方法'''
+        cali_phi_i, cali_phi_q = self._cali_phi
+        rf_wd = self.__I * Sin(2*np.pi*self.LO_freq,cali_phi_i,self.len,self.sRate) + \
+                self.__Q * Cos(2*np.pi*self.LO_freq,cali_phi_q,self.len,self.sRate)
+        self._RF = rf_wd
         return self
 
-    def _up_conversion(self):
-        if isinstance(self._I,Wavedata) and isinstance(self._Q,Wavedata):
-            self.__Cali_IQ()
-            cali_phi_i, cali_phi_q = self._cali_phi
-            rf_wf = self.__I * Sin(2*np.pi*self.LO_freq,cali_phi_i,self.len,self.sRate) + \
-                    self.__Q * Cos(2*np.pi*self.LO_freq,cali_phi_q,self.len,self.sRate)
-            self._RF = rf_wf
-            return self
-        else:
-            raise TypeError("I/Q aren't Wavedata ! ")
-
-    def up_conversion(self,LO_freq,I=0,Q=0,cali_array=None):
+    @classmethod
+    def up_conversion(cls,LO_freq,I=0,Q=0,cali_array=None):
         '''快速配置并上变频'''
-        self.set_LO(LO_freq).set_IQ(I,Q).set_Cali(cali_array)._up_conversion()
-        return self._RF
+        vIQ=cls().set_LO(LO_freq).set_IQ(I,Q).set_Cali(cali_array).UpConversion()
+        return vIQ._RF
