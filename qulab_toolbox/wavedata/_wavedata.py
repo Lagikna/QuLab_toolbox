@@ -1,4 +1,3 @@
-import copy
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.fftpack import fft,ifft
@@ -17,7 +16,6 @@ class Wavedata(object):
         _domain = min(domain), (min(domain)+length)
         dt=1/sRate
         _timeFunc = lambda x: timeFunc(x) * (x > _domain[0]) * ( x < _domain[1])
-        # x = dt * np.array(range(size)) + _domain[0] + dt/2
         x = np.arange(_domain[0]+dt/2, _domain[1], dt)
         data = np.array(_timeFunc(x))
         return data
