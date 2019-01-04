@@ -31,6 +31,12 @@ class Wavedata(object):
         return data
 
     @property
+    def x(self):
+        dt=1/self.sRate
+        x = np.arange(dt/2, self.len, dt)
+        return x
+
+    @property
     def len(self):
         length = self.size/self.sRate
         return length
@@ -169,8 +175,8 @@ class Wavedata(object):
         '''mode: full, same, valid'''
         if isinstance(other,Wavedata):
             _kernal = other.data
-        elif isinstance(other,(np.ndarray,list,tuple)):
-            _kernal = other
+        elif isinstance(other,(np.ndarray,list)):
+            _kernal = np.array(other)
         k_sum = sum(_kernal)
         kernal = _kernal / k_sum
         w = Wavedata()
@@ -194,10 +200,8 @@ class Wavedata(object):
         return w
 
     def plot(self, *arg, **kw):
-        dt=1/self.sRate
-        x = np.arange(dt/2, self.len, dt)
-        y = self.data
-        plt.plot(x, y, *arg, **kw)
+        ax = plt.gca()
+        ax.plot(self.x, self.data, *arg, **kw)
 
 
 def Blank(width=0, sRate=1e2):

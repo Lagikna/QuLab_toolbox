@@ -1,2 +1,2 @@
 from ._wavedata import *
-from .vIQmixer import vIQmixer
+from ._vIQmixer import vIQmixer

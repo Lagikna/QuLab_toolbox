@@ -22,11 +22,13 @@ class BaseFit(object):
         self._pcov = pcov
         self._error = np.sqrt(np.diag(pcov))
 
-    def plot(self, fmt1='rx', fmt2='k--', opt1={}, opt2={}):
+    def plot(self, opt1={'marker':'o','color':'','edgecolors':'r'},
+                   fmt2='k--',
+                   opt2={}):
+        ax = plt.gca()
         t,y=self.data
-        plt.plot(t, y, fmt1, **opt1)
-        plt.plot(t, self._fitfunc(t,*self._popt), fmt2, **opt2)
-        plt.show()
+        ax.scatter(t, y, **opt1)
+        ax.plot(t, self._fitfunc(t,*self._popt), fmt2, **opt2)
 
     @property
     def error(self):
