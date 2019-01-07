@@ -199,9 +199,15 @@ class Wavedata(object):
             w.data =fft(self.data)
         return w
 
-    def plot(self, *arg, **kw):
+    def plot(self, *arg, fft=False, **kw):
         ax = plt.gca()
-        ax.plot(self.x, self.data, *arg, **kw)
+        # 对于FFT变换后的波形数据，使用fft=True会去除了x的偏移，画出的频谱更准确
+        if fft:
+            dt=1/self.sRate
+            x = np.arange(0, self.len-dt/2, dt)
+            ax.plot(x, self.data, *arg, **kw)
+        else:
+            ax.plot(self.x, self.data, *arg, **kw)
 
 
 def Blank(width=0, sRate=1e2):

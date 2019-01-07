@@ -22,13 +22,17 @@ class BaseFit(object):
         self._pcov = pcov
         self._error = np.sqrt(np.diag(pcov))
 
-    def plot(self, opt1={'marker':'o','color':'','edgecolors':'r'},
+    def plot(self, opt1={},
                    fmt2='k--',
                    opt2={}):
         ax = plt.gca()
         t,y=self.data
-        ax.scatter(t, y, **opt1)
-        ax.plot(t, self._fitfunc(t,*self._popt), fmt2, **opt2)
+        sca_opt={'marker':'o','color':'','edgecolors':'r'}
+        sca_opt.update(opt1)
+        ax.scatter(t, y, **sca_opt)
+        plot_opt={}
+        plot_opt.update(opt2)
+        ax.plot(t, self._fitfunc(t,*self._popt), fmt2, **plot_opt)
 
     @property
     def error(self):
@@ -223,7 +227,7 @@ class Spinecho_Fit(BaseFit):
     @property
     def T2E(self):
         A,B,T2E = self._popt
-        return T_2E
+        return T2E
 
     @property
     def T2E_error(self):
