@@ -184,25 +184,28 @@ class Wavedata(object):
         w.data = np.convolve(self.data,kernal,mode)
         return w
 
-    def FFT(self, mode='amp'):
+    def FFT(self, mode='amp',half=False):
         w = Wavedata()
         w.sRate = self.size/self.sRate
+        fft_data = fft(self.data)
         if mode == 'amp':
-            w.data =np.abs(fft(self.data))
+            w.data =np.abs(fft_data)
         elif mode == 'phase':
-            w.data =np.angle(fft(self.data),deg=True)
+            w.data =np.angle(fft_data,deg=True)
         elif mode == 'real':
-            w.data =np.real(fft(self.data))
+            w.data =np.real(fft_data)
         elif mode == 'imag':
-            w.data =np.imag(fft(self.data))
+            w.data =np.imag(fft_data)
         elif mode == 'complex':
-            w.data =fft(self.data)
+            w.data = fft_data
+        if half:
+            w.setSize(self.size/2)
         return w
 
-    def plot(self, *arg, fft=False, **kw):
+    def plot(self, *arg, isfft=False, **kw):
         ax = plt.gca()
-        # 对于FFT变换后的波形数据，使用fft=True会去除了x的偏移，画出的频谱更准确
-        if fft:
+        # 对于FFT变换后的波形数据，使用isfft=True会去除了x的偏移，画出的频谱更准确
+        if isfft:
             dt=1/self.sRate
             x = np.arange(0, self.len-dt/2, dt)
             ax.plot(x, self.data, *arg, **kw)
