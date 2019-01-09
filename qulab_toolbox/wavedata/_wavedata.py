@@ -14,7 +14,7 @@ class Wavedata(object):
     def generateData(timeFunc, domain=(0,1), sRate=1e2):
         length = int(np.around(abs(domain[1]-domain[0]) * sRate)) / sRate
         _domain = min(domain), (min(domain)+length)
-        dt=1/sRate
+        dt = 1/sRate
         _timeFunc = lambda x: timeFunc(x) * (x > _domain[0]) * ( x < _domain[1])
         x = np.arange(_domain[0]+dt/2, _domain[1], dt)
         data = np.array(_timeFunc(x))
@@ -64,28 +64,23 @@ class Wavedata(object):
         return self
 
     def __neg__(self):
-        w = Wavedata()
-        w.sRate = self.sRate
-        w.data = -self.data
+        w = Wavedata(-self.data, self.sRate)
         return w
 
     def __abs__(self):
-        w = Wavedata()
-        w.sRate = self.sRate
-        w.data = np.abs(self.data)
+        w = Wavedata(np.abs(self.data), self.sRate)
         return w
 
     def __rshift__(self, t):
         if abs(t)>self.len:
             raise Error('shift is too large !')
-        w = Wavedata()
-        w.sRate = self.sRate
         shift_data=self._blank(abs(t))
         left_n = self.size-len(shift_data)
         if t>0:
-            w.data = np.append(shift_data, self.data[:left_n])
+            data = np.append(shift_data, self.data[:left_n])
         else:
-            w.data = np.append(self.data[-left_n:], shift_data)
+            data = np.append(self.data[-left_n:], shift_data)
+        w = Wavedata(data, self.sRate)
         return w
 
     def __lshift__(self, t):
@@ -97,9 +92,8 @@ class Wavedata(object):
         elif not self.sRate == other.sRate:
             raise Error('sRate not equal !')
         else:
-            w = Wavedata()
-            w.sRate = self.sRate
-            w.data = np.append(self.data,other.data)
+            data = np.append(self.data,other.data)
+            w = Wavedata(data, self.sRate)
             return w
 
     def __add__(self, other):
@@ -107,20 +101,18 @@ class Wavedata(object):
             if not self.sRate == other.sRate:
                 raise Error('sRate not equal !')
             else:
-                w = Wavedata()
-                w.sRate = self.sRate
                 size = max(self.size, other.size)
                 self.setSize(size)
                 other.setSize(size)
-                w.data = self.data + other.data
+                data = self.data + other.data
+                w = Wavedata(data, self.sRate)
                 return w
         else:
             return other + self
 
     def __radd__(self, v):
-        w = Wavedata()
-        w.sRate = self.sRate
-        w.data = self.data +v
+        data = self.data +v
+        w = Wavedata(data, self.sRate)
         return w
 
     def __sub__(self, other):
@@ -134,20 +126,18 @@ class Wavedata(object):
             if not self.sRate == other.sRate:
                 raise Error('sRate not equal !')
             else:
-                w = Wavedata()
-                w.sRate = self.sRate
                 size = max(self.size, other.size)
                 self.setSize(size)
                 other.setSize(size)
-                w.data = self.data * other.data
+                data = self.data * other.data
+                w = Wavedata(data, self.sRate)
                 return w
         else:
             return other * self
 
     def __rmul__(self, v):
-        w = Wavedata()
-        w.sRate = self.sRate
-        w.data = self.data * v
+        data = self.data * v
+        w = Wavedata(data, self.sRate)
         return w
 
     def __truediv__(self, other):
@@ -155,20 +145,18 @@ class Wavedata(object):
             if not self.sRate == other.sRate:
                 raise Error('sRate not equal !')
             else:
-                w = Wavedata()
-                w.sRate = self.sRate
                 size = max(self.size, other.size)
                 self.setSize(size)
                 other.setSize(size)
-                w.data = self.data / other.data
+                data = self.data / other.data
+                w = Wavedata(data, self.sRate)
                 return w
         else:
             return (1/other) * self
 
     def __rtruediv__(self, v):
-        w = Wavedata()
-        w.sRate = self.sRate
-        w.data = v / self.data
+        data = v / self.data
+        w = Wavedata(data, self.sRate)
         return w
 
     def convolve(self, other, mode='same'):
@@ -179,25 +167,24 @@ class Wavedata(object):
             _kernal = np.array(other)
         k_sum = sum(_kernal)
         kernal = _kernal / k_sum
-        w = Wavedata()
-        w.sRate = self.sRate
-        w.data = np.convolve(self.data,kernal,mode)
+        data = np.convolve(self.data,kernal,mode)
+        w = Wavedata(data, self.sRate)
         return w
 
     def FFT(self, mode='amp',half=False):
-        w = Wavedata()
-        w.sRate = self.size/self.sRate
+        sRate = self.size/self.sRate
         fft_data = fft(self.data)
         if mode == 'amp':
-            w.data =np.abs(fft_data)
+            data =np.abs(fft_data)
         elif mode == 'phase':
-            w.data =np.angle(fft_data,deg=True)
+            data =np.angle(fft_data,deg=True)
         elif mode == 'real':
-            w.data =np.real(fft_data)
+            data =np.real(fft_data)
         elif mode == 'imag':
-            w.data =np.imag(fft_data)
+            data =np.imag(fft_data)
         elif mode == 'complex':
-            w.data = fft_data
+            data = fft_data
+        w = Wavedata(data, sRate)
         if half:
             w.setSize(self.size/2)
         return w
