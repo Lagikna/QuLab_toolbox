@@ -1,8 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.fftpack import fft,ifft
+from scipy import interpolate
 
-__all__ = ['Wavedata', 'Blank', 'DC', 'Gaussian', 'CosPulse', 'Sin', 'Cos',]
+__all__ = ['Wavedata', 'Blank', 'DC', 'Triangle', 'Gaussian', 'CosPulse', 'Sin',
+    'Cos', 'Sinc', 'Interpolation']
 
 class Wavedata(object):
 
@@ -189,6 +191,32 @@ class Wavedata(object):
             w.setSize(self.size/2)
         return w
 
+    def high_resample(self,sRate):
+        assert sRate > self.sRate
+        dt = 1/self.sRate
+        x = np.arange(-dt/2, self.len+dt, dt)
+        _y = np.append(0,self.data)
+        y = np.append(_y,0)
+        timeFunc = interpolate.interp1d(x,y,kind='nearest')
+        domain = (0,self.len)
+        w = Wavedata.init(timeFunc,domain,sRate)
+        return w
+
+    def low_resample(self,sRate):
+        assert sRate < self.sRate
+        x = self.x
+        y = self.data
+        timeFunc = interpolate.interp1d(x,y,kind='linear')
+        domain = (0,self.len)
+        w = Wavedata.init(timeFunc,domain,sRate)
+        return w
+
+    def resample(self,sRate):
+        if sRate > self.sRate:
+            return self.high_resample(sRate)
+        if sRate < self.sRate:
+            return self.low_resample(sRate)
+
     def plot(self, *arg, isfft=False, **kw):
         ax = plt.gca()
         # 对于FFT变换后的波形数据，使用isfft=True会去除了x的偏移，画出的频谱更准确
@@ -210,6 +238,11 @@ def DC(width=0, sRate=1e2):
     domain=(0, width)
     return Wavedata.init(timeFunc,domain,sRate)
 
+def Triangle(width=1, sRate=1e2):
+    timeFunc = lambda x: 1-np.abs(2/width*x)
+    domain=(-0.5*width,0.5*width)
+    return Wavedata.init(timeFunc,domain,sRate)
+
 def Gaussian(width=1, sRate=1e2):
     c = width/(4*np.sqrt(2*np.log(2)))
     timeFunc = lambda x: np.exp(-0.5*(x/c)**2)
@@ -229,6 +262,16 @@ def Sin(w, phi=0, width=0, sRate=1e2):
 def Cos(w, phi=0, width=0, sRate=1e2):
     timeFunc = lambda t: np.cos(w*t+phi)
     domain=(0,width)
+    return Wavedata.init(timeFunc,domain,sRate)
+
+def Sinc(a, width=1, sRate=1e2):
+    timeFunc = lambda t: np.sinc(a*t)
+    domain=(-0.5*width,0.5*width)
+    return Wavedata.init(timeFunc,domain,sRate)
+
+def Interpolation(x, y, sRate=1e2, kind='linear'):
+    timeFunc = interpolate.interp1d(x, y, kind=kind)
+    domain = (x[0], x[-1])
     return Wavedata.init(timeFunc,domain,sRate)
 
 
