@@ -1,8 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.fftpack import fft,ifft
+from scipy import interpolate
 
-__all__ = ['Wavedata', 'Blank', 'DC', 'Gaussian', 'CosPulse', 'Sin', 'Cos',]
+__all__ = ['Wavedata', 'Blank', 'DC', 'Triangle', 'Gaussian', 'CosPulse', 'Sin',
+    'Cos', 'Sinc', 'Interpolation']
 
 class Wavedata(object):
 
@@ -166,14 +168,16 @@ class Wavedata(object):
         elif isinstance(other,(np.ndarray,list)):
             _kernal = np.array(other)
         k_sum = sum(_kernal)
-        kernal = _kernal / k_sum
+        kernal = _kernal / k_sum   #归一化kernal，使卷积后的波形总幅度不变
         data = np.convolve(self.data,kernal,mode)
         w = Wavedata(data, self.sRate)
         return w
 
-    def FFT(self, mode='amp',half=False):
+    def FFT(self, mode='amp',half=True,**kw):
         sRate = self.size/self.sRate
-        fft_data = fft(self.data)
+        # 对于双边谱，即包含负频率成分的，除以size N 得到实际振幅
+        # 对于单边谱，即不包含负频成分，实际振幅是正负频振幅的和，所以除了0频成分其他需要再乘以2
+        fft_data = fft(self.data,**kw)/self.size
         if mode == 'amp':
             data =np.abs(fft_data)
         elif mode == 'phase':
@@ -184,14 +188,61 @@ class Wavedata(object):
             data =np.imag(fft_data)
         elif mode == 'complex':
             data = fft_data
-        w = Wavedata(data, sRate)
         if half:
-            w.setSize(self.size/2)
+            #size N为偶数时，取N/2；为奇数时，取(N+1)/2
+            index = int((len(data)+1)/2)-1
+            data = data[:index]
+            data[1:] = data[1:]*2 #非0频成分乘2
+        w = Wavedata(data, sRate)
         return w
 
+    def getFFT(self,freq,**kw):
+        ''' 获取指定频率的FFT分量；
+        freq: 为一个频率值或者频率的列表，
+        返回值: 是对应的复数值或列表'''
+        freq_array=np.array(freq)
+        fft_w = self.FFT(mode='complex',half=True,**kw)
+        index_freq = np.around(freq_array*fft_w.sRate).astype(int)
+        res_array = fft_w.data[index_freq]
+        return res_array
+
+    def high_resample(self,sRate):
+        '''提高高采样率重新采样'''
+        assert sRate > self.sRate
+        #提高采样率时，新起始点会小于原起始点，新结束点大于原结束点
+        #为了插值函数成功插值，在序列前后各加一个点，增大插值范围
+        dt = 1/self.sRate
+        x = np.arange(-dt/2, self.len+dt, dt)
+        _y = np.append(0,self.data)
+        y = np.append(_y,0)
+        timeFunc = interpolate.interp1d(x,y,kind='nearest')
+        domain = (0,self.len)
+        w = Wavedata.init(timeFunc,domain,sRate)
+        return w
+
+    def low_resample(self,sRate):
+        '''降低采样率重新采样'''
+        assert sRate < self.sRate
+        #降低采样率时，新起始点会大于原起始点，新结束点小于原结束点，
+        #插值定义域不会超出，所以不用处理
+        x = self.x
+        y = self.data
+        timeFunc = interpolate.interp1d(x,y,kind='linear')
+        domain = (0,self.len)
+        w = Wavedata.init(timeFunc,domain,sRate)
+        return w
+
+    def resample(self,sRate):
+        '''改变采样率重新采样'''
+        if sRate > self.sRate:
+            return self.high_resample(sRate)
+        if sRate < self.sRate:
+            return self.low_resample(sRate)
+
     def plot(self, *arg, isfft=False, **kw):
+        '''对于FFT变换后的波形数据，包含0频成分，x从0开始；
+        使用isfft=True会去除了x的偏移，画出的频谱更准确'''
         ax = plt.gca()
-        # 对于FFT变换后的波形数据，使用isfft=True会去除了x的偏移，画出的频谱更准确
         if isfft:
             dt=1/self.sRate
             x = np.arange(0, self.len-dt/2, dt)
@@ -208,6 +259,11 @@ def Blank(width=0, sRate=1e2):
 def DC(width=0, sRate=1e2):
     timeFunc = lambda x: 1
     domain=(0, width)
+    return Wavedata.init(timeFunc,domain,sRate)
+
+def Triangle(width=1, sRate=1e2):
+    timeFunc = lambda x: 1-np.abs(2/width*x)
+    domain=(-0.5*width,0.5*width)
     return Wavedata.init(timeFunc,domain,sRate)
 
 def Gaussian(width=1, sRate=1e2):
@@ -229,6 +285,16 @@ def Sin(w, phi=0, width=0, sRate=1e2):
 def Cos(w, phi=0, width=0, sRate=1e2):
     timeFunc = lambda t: np.cos(w*t+phi)
     domain=(0,width)
+    return Wavedata.init(timeFunc,domain,sRate)
+
+def Sinc(a, width=1, sRate=1e2):
+    timeFunc = lambda t: np.sinc(a*t)
+    domain=(-0.5*width,0.5*width)
+    return Wavedata.init(timeFunc,domain,sRate)
+
+def Interpolation(x, y, sRate=1e2, kind='linear'):
+    timeFunc = interpolate.interp1d(x, y, kind=kind)
+    domain = (x[0], x[-1])
     return Wavedata.init(timeFunc,domain,sRate)
 
 
