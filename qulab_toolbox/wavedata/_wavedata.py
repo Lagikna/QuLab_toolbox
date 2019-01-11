@@ -62,6 +62,11 @@ class Wavedata(object):
             self.data = self.data[:n]
         return self
 
+    def __call__(self, t):
+        dt = 1/self.sRate
+        idx = np.around(t/dt-0.5).astype(int)
+        return self.data[idx]
+
     def __pos__(self):
         return self
 
@@ -97,6 +102,20 @@ class Wavedata(object):
             data = np.append(self.data,other.data)
             w = Wavedata(data, self.sRate)
             return w
+
+    def __xor__(self, n):
+        n = int(n)
+        if n <= 1:
+            return self
+        else:
+            data = list(self.data)*n
+            w = Wavedata(data, self.sRate)
+            return w
+
+    def __pow__(self, v):
+        data = self.data ** v
+        w = Wavedata(data, self.sRate)
+        return w
 
     def __add__(self, other):
         if isinstance(other,Wavedata):
