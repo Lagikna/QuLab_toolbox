@@ -5,7 +5,7 @@ from scipy.fftpack import fft,ifft
 from scipy.signal import chirp,sweep_poly
 
 __all__ = ['Wavedata', 'Blank', 'DC', 'Triangle', 'Gaussian', 'CosPulse', 'Sin',
-    'Cos', 'Sinc', 'Interpolation']
+    'Cos', 'Sinc', 'Interpolation', 'Chirp', 'Sweep_poly']
 
 class Wavedata(object):
 
@@ -284,6 +284,18 @@ class Wavedata(object):
         '''归一化波形，使其分布在(-1,+1)'''
         self.data = self.data/max(abs(self.data))
         return self
+
+    def process(self,func):
+        '''处理，传入一个处理函数func, 输入输出都是(data,sRate)格式'''
+        data,sRate = func(self.data,self.sRate)
+        return Wavedata(data,sRate)
+
+    def filt(self,filter):
+        '''调用filter的process函数处理；
+        一般filter是本模块里的Filter类'''
+        assert hasattr(filter,'process')
+        w = self.process(filter.process)
+        return w
 
     def plot(self, *arg, isfft=False, **kw):
         '''对于FFT变换后的波形数据，包含0频成分，x从0开始；
