@@ -27,15 +27,11 @@ class vIQmixer(object):
             self._I = 0*Q
         elif Q == 0:
             self._Q = 0*I
-        if isinstance(self._I,Wavedata) and isinstance(self._Q,Wavedata):
-            if self._I.size==self._Q.size and self._I.sRate==self._Q.sRate:
-                self.len = self._I.len
-                self.sRate = self._I.sRate
-                return self
-            else:
-                raise Error('length or sRate not equal !')
-        else:
-            raise TypeError("I/Q aren't Wavedata ! ")
+        assert isinstance(self._I,Wavedata) and isinstance(self._Q,Wavedata)
+        assert self._I.size==self._Q.size and self._I.sRate==self._Q.sRate
+        self.len = self._I.len
+        self.sRate = self._I.sRate
+        return self
 
     def set_LO(self,LO_freq):
         self.LO_freq = LO_freq

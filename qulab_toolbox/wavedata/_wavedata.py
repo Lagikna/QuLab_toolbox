@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.fftpack import fft,ifft
 from scipy import interpolate
+from scipy.fftpack import fft,ifft
+from scipy.signal import chirp,sweep_poly
 
 __all__ = ['Wavedata', 'Blank', 'DC', 'Triangle', 'Gaussian', 'CosPulse', 'Sin',
     'Cos', 'Sinc', 'Interpolation']
@@ -9,11 +10,13 @@ __all__ = ['Wavedata', 'Blank', 'DC', 'Triangle', 'Gaussian', 'CosPulse', 'Sin',
 class Wavedata(object):
 
     def __init__(self, data = [], sRate = 1):
+        '''给定序列和采样率，构造Wavedata'''
         self.data = np.array(data)
         self.sRate = sRate
 
     @staticmethod
     def generateData(timeFunc, domain=(0,1), sRate=1e2):
+        '''给定函数、定义域、采样率，生成data序列'''
         length = np.around(abs(domain[1]-domain[0]) * sRate).astype(int) / sRate
         _domain = min(domain), (min(domain)+length)
         dt = 1/sRate
@@ -24,6 +27,7 @@ class Wavedata(object):
 
     @classmethod
     def init(cls, timeFunc, domain=(0,1), sRate=1e2):
+        '''给定函数、定义域、采样率，生成Wavedata类'''
         data = cls.generateData(timeFunc,domain,sRate)
         return cls(data,sRate)
 
@@ -34,7 +38,7 @@ class Wavedata(object):
 
     @property
     def x(self):
-        '''返回波形的时间'''
+        '''返回波形的时间列表'''
         dt=1/self.sRate
         x = np.arange(dt/2, self.len, dt)
         return x
@@ -90,7 +94,7 @@ class Wavedata(object):
     def __rshift__(self, t):
         '''右移 w>>t 长度不变'''
         if abs(t)>self.len:
-            raise Error('shift is too large !')
+            raise TypeError('shift is too large !')
         shift_data=self._blank(abs(t))
         left_n = self.size-len(shift_data)
         if t>0:
@@ -106,14 +110,11 @@ class Wavedata(object):
 
     def __or__(self, other):
         '''或 w|o 串联波形'''
-        if not isinstance(other,Wavedata):
-            raise TypeError('not Wavedata class !')
-        elif not self.sRate == other.sRate:
-            raise Error('sRate not equal !')
-        else:
-            data = np.append(self.data,other.data)
-            w = Wavedata(data, self.sRate)
-            return w
+        assert isinstance(other,Wavedata)
+        assert self.sRate == other.sRate
+        data = np.append(self.data,other.data)
+        w = Wavedata(data, self.sRate)
+        return w
 
     def __xor__(self, n):
         '''异或 w^n 串联n个波形'''
@@ -134,15 +135,13 @@ class Wavedata(object):
     def __add__(self, other):
         '''加 w+o 波形值相加，会根据类型判断'''
         if isinstance(other,Wavedata):
-            if not self.sRate == other.sRate:
-                raise Error('sRate not equal !')
-            else:
-                size = max(self.size, other.size)
-                self.setSize(size)
-                other.setSize(size)
-                data = self.data + other.data
-                w = Wavedata(data, self.sRate)
-                return w
+            assert self.sRate == other.sRate
+            size = max(self.size, other.size)
+            self.setSize(size)
+            other.setSize(size)
+            data = self.data + other.data
+            w = Wavedata(data, self.sRate)
+            return w
         else:
             return other + self
 
@@ -163,15 +162,13 @@ class Wavedata(object):
     def __mul__(self, other):
         '''乘 w*o 波形值相乘，会根据类型判断'''
         if isinstance(other,Wavedata):
-            if not self.sRate == other.sRate:
-                raise Error('sRate not equal !')
-            else:
-                size = max(self.size, other.size)
-                self.setSize(size)
-                other.setSize(size)
-                data = self.data * other.data
-                w = Wavedata(data, self.sRate)
-                return w
+            assert self.sRate == other.sRate
+            size = max(self.size, other.size)
+            self.setSize(size)
+            other.setSize(size)
+            data = self.data * other.data
+            w = Wavedata(data, self.sRate)
+            return w
         else:
             return other * self
 
@@ -184,15 +181,13 @@ class Wavedata(object):
     def __truediv__(self, other):
         '''除 w/o 波形值相除，会根据类型判断'''
         if isinstance(other,Wavedata):
-            if not self.sRate == other.sRate:
-                raise Error('sRate not equal !')
-            else:
-                size = max(self.size, other.size)
-                self.setSize(size)
-                other.setSize(size)
-                data = self.data / other.data
-                w = Wavedata(data, self.sRate)
-                return w
+            assert self.sRate == other.sRate
+            size = max(self.size, other.size)
+            self.setSize(size)
+            other.setSize(size)
+            data = self.data / other.data
+            w = Wavedata(data, self.sRate)
+            return w
         else:
             return (1/other) * self
 
@@ -218,6 +213,7 @@ class Wavedata(object):
     def FFT(self, mode='amp',half=True,**kw):
         '''FFT'''
         sRate = self.size/self.sRate
+        # 对于实数序列的FFT，正负频率的分量是相同的
         # 对于双边谱，即包含负频率成分的，除以size N 得到实际振幅
         # 对于单边谱，即不包含负频成分，实际振幅是正负频振幅的和，所以除了0频成分其他需要再乘以2
         fft_data = fft(self.data,**kw)/self.size
@@ -239,12 +235,12 @@ class Wavedata(object):
         w = Wavedata(data, sRate)
         return w
 
-    def getFFT(self,freq,**kw):
+    def getFFT(self,freq,mode='complex',**kw):
         ''' 获取指定频率的FFT分量；
         freq: 为一个频率值或者频率的列表，
-        返回值: 是对应的复数值或列表'''
+        返回值: 是对应mode的一个值或列表'''
         freq_array=np.array(freq)
-        fft_w = self.FFT(mode='complex',half=True,**kw)
+        fft_w = self.FFT(mode=mode,half=True,**kw)
         index_freq = np.around(freq_array*fft_w.sRate).astype(int)
         res_array = fft_w.data[index_freq]
         return res_array
@@ -283,6 +279,11 @@ class Wavedata(object):
             return self.high_resample(sRate)
         elif sRate < self.sRate:
             return self.low_resample(sRate)
+
+    def normalize(self):
+        '''归一化波形，使其分布在(-1,+1)'''
+        self.data = self.data/max(abs(self.data))
+        return self
 
     def plot(self, *arg, isfft=False, **kw):
         '''对于FFT变换后的波形数据，包含0频成分，x从0开始；
@@ -338,8 +339,22 @@ def Sinc(a, width=1, sRate=1e2):
     return Wavedata.init(timeFunc,domain,sRate)
 
 def Interpolation(x, y, sRate=1e2, kind='linear'):
+    '''参考scipy.interpolate.interp1d 插值'''
     timeFunc = interpolate.interp1d(x, y, kind=kind)
     domain = (x[0], x[-1])
+    return Wavedata.init(timeFunc,domain,sRate)
+
+def Chirp(width, f0, f1, sRate=1e2, method='linear', phi=0):
+    '''参考scipy.signal.chirp 啁啾'''
+    t1 = width # 结束点
+    timeFunc = lambda t: chirp(t, f0, t1, f1, method=method, phi=phi, )
+    domain = (0,t1)
+    return Wavedata.init(timeFunc,domain,sRate)
+
+def Sweep_poly(width, poly, sRate=1e2, phi=0):
+    '''参考scipy.signal.sweep_poly 多项式频率'''
+    timeFunc = lambda t: sweep_poly(t, poly, phi=0)
+    domain = (0,width)
     return Wavedata.init(timeFunc,domain,sRate)
 
 
