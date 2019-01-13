@@ -290,7 +290,7 @@ class Wavedata(object):
         data,sRate = func(self.data,self.sRate)
         return Wavedata(data,sRate)
 
-    def filt(self,filter):
+    def filter(self,filter):
         '''调用filter的process函数处理；
         一般filter是本模块里的Filter类'''
         assert hasattr(filter,'process')

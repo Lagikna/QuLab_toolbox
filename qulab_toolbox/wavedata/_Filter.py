@@ -1,20 +1,9 @@
 import numpy as np
-from ._wavedata import *
+from ._wavedata import Wavedata
 
-# def WGN(w, snr):
-#     '''White Gaussian Noise: 向波形w中添加一个信噪比为 snr dB 的高斯白噪声；
-#     返回添加噪声后的波形，Wavedata类'''
-#     assert isinstance(w,Wavedata)
-#     x=w.data
-#     snr = 10**(snr/10.0)
-#     xpower = np.sum(x**2)/len(x)
-#     npower = xpower / snr
-#     n = np.random.randn(len(x)) * np.sqrt(npower)
-#     data = x + n
-#     return Wavedata(data,w.sRate)
 
 class Filter(object):
-    """docstring for Filter."""
+    """Filter baseclass, filt nothing."""
     def __init__(self):
         super(Filter, self).__init__()
 
@@ -25,6 +14,28 @@ class Filter(object):
         assert isinstance(w,Wavedata)
         data,sRate = self.process(w.data,w.sRate)
         return Wavedata(data,sRate)
+
+
+def series(*arg):
+    '''串联多个Filter'''
+    def process(data,sRate):
+        for f in arg:
+            data,sRate = f.process(data,sRate)
+        return data,sRate
+    F = Filter()
+    F.process=process
+    return F
+
+
+def parallel(*arg):
+    '''并联多个Filter'''
+    def process(data,sRate):
+        d_list = [f.process(data,sRate)[0] for f in arg]
+        d = np.array(d_list).sum(axis=0)/len(arg)
+        return d,sRate
+    F = Filter()
+    F.process=process
+    return F
 
 
 class WGN(Filter):
