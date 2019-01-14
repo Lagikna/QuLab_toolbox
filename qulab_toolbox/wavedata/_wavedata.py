@@ -245,7 +245,7 @@ class Wavedata(object):
         res_array = fft_w.data[index_freq]
         return res_array
 
-    def high_resample(self,sRate):
+    def high_resample(self,sRate,kind='nearest'):
         '''提高高采样率重新采样'''
         assert sRate > self.sRate
         #提高采样率时，新起始点会小于原起始点，新结束点大于原结束点
@@ -254,19 +254,19 @@ class Wavedata(object):
         x = np.arange(-dt/2, self.len+dt, dt)
         _y = np.append(0,self.data)
         y = np.append(_y,0)
-        timeFunc = interpolate.interp1d(x,y,kind='nearest')
+        timeFunc = interpolate.interp1d(x,y,kind=kind)
         domain = (0,self.len)
         w = Wavedata.init(timeFunc,domain,sRate)
         return w
 
-    def low_resample(self,sRate):
+    def low_resample(self,sRate,kind='linear'):
         '''降低采样率重新采样'''
         assert sRate < self.sRate
         #降低采样率时，新起始点会大于原起始点，新结束点小于原结束点，
         #插值定义域不会超出，所以不用处理
         x = self.x
         y = self.data
-        timeFunc = interpolate.interp1d(x,y,kind='linear')
+        timeFunc = interpolate.interp1d(x,y,kind=kind)
         domain = (0,self.len)
         w = Wavedata.init(timeFunc,domain,sRate)
         return w
@@ -307,6 +307,14 @@ class Wavedata(object):
             ax.plot(x, self.data, *arg, **kw)
         else:
             ax.plot(self.x, self.data, *arg, **kw)
+
+    def plt(self,mode='psd',**kw):
+        '''调用pyplot里与频谱相关的函数画图
+        mode 可以为 psd,specgram,magnitude_spectrum,angle_spectrum,phase_spectrum等5个
+        (cohere,csd需要两列数据，这里不支持)'''
+        ax = plt.gca()
+        plt_func = getattr(plt,mode)
+        return plt_func(x=self.data,Fs=self.sRate,**kw)
 
 
 def Blank(width=0, sRate=1e2):

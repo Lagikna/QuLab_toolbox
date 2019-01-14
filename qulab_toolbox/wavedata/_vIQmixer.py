@@ -1,5 +1,5 @@
 import numpy as np
-from ._wavedata import *
+from ._wavedata import Wavedata,Sin,Cos
 
 
 class vIQmixer(object):

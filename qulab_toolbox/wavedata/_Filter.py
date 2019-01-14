@@ -8,9 +8,11 @@ class Filter(object):
         super(Filter, self).__init__()
 
     def process(self,data,sRate):
+        '''Filter处理函数，输入输出都是(data,sRate)格式'''
         return data,sRate
 
     def filt(self,w):
+        '''传入Wavedata，返回滤波后的Waveda'''
         assert isinstance(w,Wavedata)
         data,sRate = self.process(w.data,w.sRate)
         return Wavedata(data,sRate)
