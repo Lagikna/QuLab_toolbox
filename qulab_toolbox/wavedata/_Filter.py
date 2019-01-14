@@ -1,11 +1,15 @@
 import numpy as np
 from ._wavedata import Wavedata
+import scipy.signal as signal
+import matplotlib.pyplot as plt
 
 
 class Filter(object):
     """Filter baseclass, filt nothing."""
-    def __init__(self):
+    def __init__(self, process=None):
         super(Filter, self).__init__()
+        if process is not None:
+            self.process = process
 
     def process(self,data,sRate):
         '''Filter处理函数，输入输出都是(data,sRate)格式'''
@@ -54,3 +58,32 @@ class WGN(Filter):
         n = np.random.randn(len(x)) * np.sqrt(npower)
         _data = x + n
         return _data,sRate
+
+class IIRfilter(Filter):
+    """docstring for IIRfilter."""
+    def __init__(self, N=1, Wn=[49e6, 51e6], rp=0.01, rs=100, btype='band',
+                     ftype='ellip', fs=1e9):
+        # 默认参数是一个50MHz的 ellip 滤波器
+        super(IIRfilter, self).__init__()
+        # IIRfilter 配置字典, default: output='ba',analog=False,
+        self.dict=dict(N=N, Wn=Wn, rp=rp, rs=rs, btype=btype,
+                        analog=False, ftype=ftype, output='ba', fs=fs)
+        self.ba = signal.iirfilter(**self.dict)
+
+    def process(self,data,sRate):
+        assert sRate == self.dict['fs']
+        b,a = self.ba
+        _data = signal.filtfilt(b, a, data)
+        return _data, sRate
+
+    def freqz(self):
+        '''返回数字滤波器频率响应'''
+        w,h = signal.freqz(*self.ba,fs=self.dict['fs'])
+        return w,h
+
+    def plot(self):
+        '''画出频率响应曲线'''
+        w,h=self.freqz()
+        plt.plot(w, np.abs(h))
+        plt.xlabel('Frequency')
+        plt.ylabel('factor')

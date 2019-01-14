@@ -308,13 +308,15 @@ class Wavedata(object):
         else:
             ax.plot(self.x, self.data, *arg, **kw)
 
-    def plt(self,mode='psd',**kw):
+    def plt(self,mode='psd', r=False, **kw):
         '''调用pyplot里与频谱相关的函数画图
         mode 可以为 psd,specgram,magnitude_spectrum,angle_spectrum,phase_spectrum等5个
         (cohere,csd需要两列数据，这里不支持)'''
         ax = plt.gca()
         plt_func = getattr(plt,mode)
-        return plt_func(x=self.data,Fs=self.sRate,**kw)
+        res = plt_func(x=self.data,Fs=self.sRate,**kw)
+        if r:
+            return res
 
 
 def Blank(width=0, sRate=1e2):
