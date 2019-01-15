@@ -28,8 +28,7 @@ def series(*arg):
         for f in arg:
             data,sRate = f.process(data,sRate)
         return data,sRate
-    F = Filter()
-    F.process=process
+    F = Filter(process)
     return F
 
 
@@ -39,15 +38,13 @@ def parallel(*arg):
         d_list = [f.process(data,sRate)[0] for f in arg]
         d = np.array(d_list).sum(axis=0)/len(arg)
         return d,sRate
-    F = Filter()
-    F.process=process
+    F = Filter(process)
     return F
 
 
 class WGN(Filter):
     '''White Gaussian Noise adder: 向波形w中添加一个信噪比为 snr dB 的高斯白噪声'''
     def __init__(self, snr):
-        super(WGN, self).__init__()
         self.snr = snr
 
     def process(self,data,sRate):
@@ -59,16 +56,15 @@ class WGN(Filter):
         _data = x + n
         return _data,sRate
 
-class IIRfilter(Filter):
-    """docstring for IIRfilter."""
-    def __init__(self, N=1, Wn=[49e6, 51e6], rp=0.01, rs=100, btype='band',
-                     ftype='ellip', fs=1e9):
-        # 默认参数是一个50MHz的 ellip 滤波器
-        super(IIRfilter, self).__init__()
-        # IIRfilter 配置字典, default: output='ba',analog=False,
-        self.dict=dict(N=N, Wn=Wn, rp=rp, rs=rs, btype=btype,
-                        analog=False, ftype=ftype, output='ba', fs=fs)
-        self.ba = signal.iirfilter(**self.dict)
+
+class baFilter(Filter):
+    """指定signal里包含的滤波器函数名,生成相关的结果为 ba 的数字滤波器."""
+    def __init__(self, name='', **kw):
+        # 指定signal里包含的滤波器函数名,传入相关的参数
+        kw.update(output='ba',analog=False)
+        self.dict=kw  # self.dict必须包含fs
+        filtertype = getattr(signal,name)
+        self.ba = filtertype(**self.dict)
 
     def process(self,data,sRate):
         assert sRate == self.dict['fs']
@@ -87,3 +83,25 @@ class IIRfilter(Filter):
         plt.plot(w, np.abs(h))
         plt.xlabel('Frequency')
         plt.ylabel('factor')
+
+class IIRFilter(baFilter):
+    '''参考scipy.signal.iirfilter'''
+    def __init__(self, N=2, Wn=[49e6, 51e6], rp=0.01, rs=100, btype='band',
+                     ftype='ellip', fs=1e9):
+        # 为避免麻烦，不继承 baFilter.__init__ 函数，只继承其他函数
+        # 默认参数是一个50MHz的 ellip 滤波器
+        # 配置字典, default: output='ba',analog=False,
+        self.dict=dict(N=N, Wn=Wn, rp=rp, rs=rs, btype=btype,
+                        analog=False, ftype=ftype, output='ba', fs=fs)
+        self.ba = signal.iirfilter(**self.dict)
+
+class BesselFilter(baFilter):
+    '''参考scipy.signal.bessel'''
+    def __init__(self, N=2, Wn=100e6, btype='low',
+                     norm='phase', fs=1e9):
+        # 为避免麻烦，不继承 baFilter.__init__ 函数，只继承其他函数
+        # 默认参数是一个100MHz的 2阶低通贝塞尔滤波器
+        # 配置字典, default: output='ba',analog=False,
+        self.dict=dict(N=N, Wn=Wn, btype=btype,
+                        analog=False, output='ba', norm=norm, fs=fs)
+        self.ba = signal.bessel(**self.dict)

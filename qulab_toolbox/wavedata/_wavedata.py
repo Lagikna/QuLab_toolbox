@@ -4,8 +4,8 @@ from scipy import interpolate
 from scipy.fftpack import fft,ifft
 from scipy.signal import chirp,sweep_poly
 
-__all__ = ['Wavedata', 'Blank', 'DC', 'Triangle', 'Gaussian', 'CosPulse', 'Sin',
-    'Cos', 'Sinc', 'Interpolation', 'Chirp', 'Sweep_poly']
+__all__ = ['Wavedata', 'Blank', 'Noise_wgn', 'DC', 'Triangle', 'Gaussian', 'CosPulse',
+    'Sin', 'Cos', 'Sinc', 'Interpolation', 'Chirp', 'Sweep_poly']
 
 class Wavedata(object):
 
@@ -323,6 +323,12 @@ def Blank(width=0, sRate=1e2):
     timeFunc = lambda x: 0
     domain=(0, width)
     return Wavedata.init(timeFunc,domain,sRate)
+
+def Noise_wgn(width=0, sRate=1e2):
+    '''产生高斯白噪声序列，注意序列未归一化'''
+    size = np.around(width * sRate).astype(int)
+    data = np.random.randn(size)
+    return Wavedata(data,sRate)
 
 def DC(width=0, sRate=1e2):
     timeFunc = lambda x: 1
