@@ -1,6 +1,7 @@
 import numpy as np
-from ._wavedata import *
+from ._wavedata import Wavedata,Sin,Cos
 
+'''Wavedata 虚拟IQ混频器模块'''
 
 class vIQmixer(object):
     '''virtual IQ mixer'''

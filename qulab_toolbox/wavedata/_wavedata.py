@@ -4,8 +4,9 @@ from scipy import interpolate
 from scipy.fftpack import fft,ifft
 from scipy.signal import chirp,sweep_poly
 
-__all__ = ['Wavedata', 'Blank', 'DC', 'Triangle', 'Gaussian', 'CosPulse', 'Sin',
-    'Cos', 'Sinc', 'Interpolation', 'Chirp', 'Sweep_poly']
+__all__ = ['Wavedata', 'Blank', 'Noise_wgn', 'DC', 'Triangle', 'Gaussian',
+    'Gaussian2', 'CosPulse','Sin', 'Cos', 'Sinc',
+    'Interpolation', 'Chirp', 'Sweep_poly']
 
 class Wavedata(object):
 
@@ -211,7 +212,7 @@ class Wavedata(object):
         return w
 
     def FFT(self, mode='amp',half=True,**kw):
-        '''FFT'''
+        '''FFT, 默认波形data为实数序列, 只取一半结果, 为实际物理频谱'''
         sRate = self.size/self.sRate
         # 对于实数序列的FFT，正负频率的分量是相同的
         # 对于双边谱，即包含负频率成分的，除以size N 得到实际振幅
@@ -245,8 +246,8 @@ class Wavedata(object):
         res_array = fft_w.data[index_freq]
         return res_array
 
-    def high_resample(self,sRate):
-        '''提高高采样率重新采样'''
+    def high_resample(self,sRate,kind='nearest'):
+        '''提高采样率重新采样'''
         assert sRate > self.sRate
         #提高采样率时，新起始点会小于原起始点，新结束点大于原结束点
         #为了插值函数成功插值，在序列前后各加一个点，增大插值范围
@@ -254,19 +255,19 @@ class Wavedata(object):
         x = np.arange(-dt/2, self.len+dt, dt)
         _y = np.append(0,self.data)
         y = np.append(_y,0)
-        timeFunc = interpolate.interp1d(x,y,kind='nearest')
+        timeFunc = interpolate.interp1d(x,y,kind=kind)
         domain = (0,self.len)
         w = Wavedata.init(timeFunc,domain,sRate)
         return w
 
-    def low_resample(self,sRate):
+    def low_resample(self,sRate,kind='linear'):
         '''降低采样率重新采样'''
         assert sRate < self.sRate
         #降低采样率时，新起始点会大于原起始点，新结束点小于原结束点，
         #插值定义域不会超出，所以不用处理
         x = self.x
         y = self.data
-        timeFunc = interpolate.interp1d(x,y,kind='linear')
+        timeFunc = interpolate.interp1d(x,y,kind=kind)
         domain = (0,self.len)
         w = Wavedata.init(timeFunc,domain,sRate)
         return w
@@ -285,9 +286,25 @@ class Wavedata(object):
         self.data = self.data/max(abs(self.data))
         return self
 
-    def process(self,func):
+    def derivative(self):
+        '''求导，点数不变'''
+        y1=np.append(0,self.data[:-1])
+        y2=np.append(self.data[1:],0)
+        diff_data = (y2-y1)/2 #差分数据，间隔1个点做差分
+        data = diff_data*self.sRate #导数，差分值除以 dt
+        w = Wavedata(data,self.sRate)
+        return w
+
+    def integrate(self):
+        '''求积分，点数不变'''
+        cumsum_data = np.cumsum(self.data) #累积
+        data = cumsum_data/self.sRate #积分，累积值乘以 dt
+        w = Wavedata(data,self.sRate)
+        return w
+
+    def process(self,func,**kw):
         '''处理，传入一个处理函数func, 输入输出都是(data,sRate)格式'''
-        data,sRate = func(self.data,self.sRate)
+        data,sRate = func(self.data,self.sRate,**kw) # 接受额外的参数传递给func
         return Wavedata(data,sRate)
 
     def filter(self,filter):
@@ -308,11 +325,27 @@ class Wavedata(object):
         else:
             ax.plot(self.x, self.data, *arg, **kw)
 
+    def plt(self,mode='psd', r=False, **kw):
+        '''调用pyplot里与频谱相关的函数画图
+        mode 可以为 psd,specgram,magnitude_spectrum,angle_spectrum,phase_spectrum等5个
+        (cohere,csd需要两列数据，这里不支持)'''
+        ax = plt.gca()
+        plt_func = getattr(plt,mode)
+        res = plt_func(x=self.data,Fs=self.sRate,**kw)
+        if r:
+            return res
+
 
 def Blank(width=0, sRate=1e2):
     timeFunc = lambda x: 0
     domain=(0, width)
     return Wavedata.init(timeFunc,domain,sRate)
+
+def Noise_wgn(width=0, sRate=1e2):
+    '''产生高斯白噪声序列，注意序列未归一化'''
+    size = np.around(width * sRate).astype(int)
+    data = np.random.randn(size)
+    return Wavedata(data,sRate)
 
 def DC(width=0, sRate=1e2):
     timeFunc = lambda x: 1
@@ -327,6 +360,15 @@ def Triangle(width=1, sRate=1e2):
 def Gaussian(width=1, sRate=1e2):
     c = width/(4*np.sqrt(2*np.log(2)))
     timeFunc = lambda x: np.exp(-0.5*(x/c)**2)
+    domain=(-0.5*width,0.5*width)
+    return Wavedata.init(timeFunc,domain,sRate)
+
+def Gaussian2(width=1,sRate=1e2,a=5):
+    '''修正的高斯波形, a是width和方差的比值'''
+    c = width/a # 方差
+    # 减去由于截取造成的台阶, 使边缘为0, 并归一化
+    y0 = np.exp(-0.5*(width/2/c)**2)
+    timeFunc = lambda x: (np.exp(-0.5*(x/c)**2)-y0)/(1-y0)
     domain=(-0.5*width,0.5*width)
     return Wavedata.init(timeFunc,domain,sRate)
 
