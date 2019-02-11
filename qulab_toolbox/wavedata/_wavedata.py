@@ -247,7 +247,7 @@ class Wavedata(object):
         return res_array
 
     def high_resample(self,sRate,kind='nearest'):
-        '''提高高采样率重新采样'''
+        '''提高采样率重新采样'''
         assert sRate > self.sRate
         #提高采样率时，新起始点会小于原起始点，新结束点大于原结束点
         #为了插值函数成功插值，在序列前后各加一个点，增大插值范围
@@ -302,9 +302,9 @@ class Wavedata(object):
         w = Wavedata(data,self.sRate)
         return w
 
-    def process(self,func):
+    def process(self,func,**kw):
         '''处理，传入一个处理函数func, 输入输出都是(data,sRate)格式'''
-        data,sRate = func(self.data,self.sRate)
+        data,sRate = func(self.data,self.sRate,**kw) # 接受额外的参数传递给func
         return Wavedata(data,sRate)
 
     def filter(self,filter):

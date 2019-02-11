@@ -3,6 +3,7 @@ from ._wavedata import Wavedata
 import scipy.signal as signal
 import matplotlib.pyplot as plt
 
+'''Wavedata 滤波器模块，包含一些数字滤波器'''
 
 class Filter(object):
     """Filter baseclass, filt nothing."""
