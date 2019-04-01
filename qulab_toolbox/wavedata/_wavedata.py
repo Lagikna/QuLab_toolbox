@@ -51,7 +51,7 @@ class Wavedata(object):
         x = np.arange(-dt/2, self.len+dt, dt)
         _y = np.append(0,self.data)
         y = np.append(_y,0)
-        _timeFunc = interpolate.interp1d(x,y,kind=kind,fill_value=[0,0])
+        _timeFunc = interpolate.interp1d(x,y,kind=kind,bounds_error=False,fill_value=(0,0))
         return _timeFunc
 
     @property
