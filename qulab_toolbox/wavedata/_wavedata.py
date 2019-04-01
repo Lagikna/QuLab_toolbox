@@ -15,6 +15,16 @@ class Wavedata(object):
         self.data = np.array(data)
         self.sRate = sRate
 
+    def timeFunc(self,kind='cubic'):
+        '''返回波形插值得到的时间函数，默认cubic插值'''
+        #为了插值函数成功插值，在序列的x/y前后各加一个点，增大插值范围
+        dt = 1/self.sRate
+        x = np.arange(-dt/2, self.len+dt, dt)
+        _y = np.append(0,self.data)
+        y = np.append(_y,0)
+        _timeFunc = interpolate.interp1d(x,y,kind=kind,bounds_error=False,fill_value=(0,0))
+        return _timeFunc
+
     @staticmethod
     def generateData(timeFunc, domain=(0,1), sRate=1e2):
         '''给定函数、定义域、采样率，生成data序列'''
@@ -32,11 +42,6 @@ class Wavedata(object):
         data = cls.generateData(timeFunc,domain,sRate)
         return cls(data,sRate)
 
-    def _blank(self,length=0):
-        n = np.around(abs(length)*self.sRate).astype(int)
-        data = np.zeros(n)
-        return data
-
     @property
     def x(self):
         '''返回波形的时间列表'''
@@ -44,15 +49,11 @@ class Wavedata(object):
         x = np.arange(dt/2, self.len, dt)
         return x
 
-    def Func(self,kind='cubic'):
-        '''返回波形插值得到的时间函数，默认cubic插值'''
-        #为了插值函数成功插值，在序列前后各加一个点，增大插值范围
-        dt = 1/self.sRate
-        x = np.arange(-dt/2, self.len+dt, dt)
-        _y = np.append(0,self.data)
-        y = np.append(_y,0)
-        _timeFunc = interpolate.interp1d(x,y,kind=kind,bounds_error=False,fill_value=(0,0))
-        return _timeFunc
+    @property
+    def f(self):
+        '''返回根据属性data特定类型cubic插值得到的时间函数'''
+        f = self.timeFunc(kind='cubic')
+        return f
 
     @property
     def len(self):
@@ -106,8 +107,9 @@ class Wavedata(object):
         '''右移 w>>t 长度不变'''
         if abs(t)>self.len:
             raise TypeError('shift is too large !')
-        shift_data=self._blank(abs(t))
-        left_n = self.size-len(shift_data)
+        n = np.around(abs(t)*self.sRate).astype(int)
+        shift_data = np.zeros(n)
+        left_n = self.size-n
         if t>0:
             data = np.append(shift_data, self.data[:left_n])
         else:
@@ -266,7 +268,7 @@ class Wavedata(object):
         # _y = np.append(0,self.data)
         # y = np.append(_y,0)
         # timeFunc = interpolate.interp1d(x,y,kind=kind)
-        timeFunc = self.Func(kind=kind)
+        timeFunc = self.timeFunc(kind=kind)
         domain = (0,self.len)
         w = Wavedata.init(timeFunc,domain,sRate)
         return w
@@ -279,7 +281,7 @@ class Wavedata(object):
         # x = self.x
         # y = self.data
         # timeFunc = interpolate.interp1d(x,y,kind=kind)
-        timeFunc = self.Func(kind=kind)
+        timeFunc = self.timeFunc(kind=kind)
         domain = (0,self.len)
         w = Wavedata.init(timeFunc,domain,sRate)
         return w
