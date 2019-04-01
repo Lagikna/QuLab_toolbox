@@ -44,6 +44,16 @@ class Wavedata(object):
         x = np.arange(dt/2, self.len, dt)
         return x
 
+    def Func(self,kind='cubic'):
+        '''返回波形插值得到的时间函数，默认cubic插值'''
+        #为了插值函数成功插值，在序列前后各加一个点，增大插值范围
+        dt = 1/self.sRate
+        x = np.arange(-dt/2, self.len+dt, dt)
+        _y = np.append(0,self.data)
+        y = np.append(_y,0)
+        _timeFunc = interpolate.interp1d(x,y,kind=kind,fill_value=[0,0])
+        return _timeFunc
+
     @property
     def len(self):
         '''返回波形长度'''
@@ -251,11 +261,12 @@ class Wavedata(object):
         assert sRate > self.sRate
         #提高采样率时，新起始点会小于原起始点，新结束点大于原结束点
         #为了插值函数成功插值，在序列前后各加一个点，增大插值范围
-        dt = 1/self.sRate
-        x = np.arange(-dt/2, self.len+dt, dt)
-        _y = np.append(0,self.data)
-        y = np.append(_y,0)
-        timeFunc = interpolate.interp1d(x,y,kind=kind)
+        # dt = 1/self.sRate
+        # x = np.arange(-dt/2, self.len+dt, dt)
+        # _y = np.append(0,self.data)
+        # y = np.append(_y,0)
+        # timeFunc = interpolate.interp1d(x,y,kind=kind)
+        timeFunc = self.Func(kind=kind)
         domain = (0,self.len)
         w = Wavedata.init(timeFunc,domain,sRate)
         return w
@@ -265,9 +276,10 @@ class Wavedata(object):
         assert sRate < self.sRate
         #降低采样率时，新起始点会大于原起始点，新结束点小于原结束点，
         #插值定义域不会超出，所以不用处理
-        x = self.x
-        y = self.data
-        timeFunc = interpolate.interp1d(x,y,kind=kind)
+        # x = self.x
+        # y = self.data
+        # timeFunc = interpolate.interp1d(x,y,kind=kind)
+        timeFunc = self.Func(kind=kind)
         domain = (0,self.len)
         w = Wavedata.init(timeFunc,domain,sRate)
         return w
