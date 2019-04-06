@@ -15,9 +15,9 @@ class Wavedata(object):
         self.data = np.array(data)
         self.sRate = sRate
 
-    def timeFunc(self,kind='cubic'):
+    def timeFunc(self,kind='cubic'):  # 不支持复数
         '''返回波形插值得到的时间函数，默认cubic插值'''
-        #为了插值函数成功插值，在序列的x/y前后各加一个点，增大插值范围
+        #为了更好地插值，在插值序列x/y前后各加一个点，增大插值范围
         dt = 1/self.sRate
         x = np.arange(-dt/2, self.len+dt, dt)
         _y = np.append(0,self.data)
@@ -50,8 +50,8 @@ class Wavedata(object):
         return x
 
     @property
-    def f(self):
-        '''返回根据属性data特定类型cubic插值得到的时间函数'''
+    def f(self): # 不支持复数
+        '''返回根据属性data进行cubic类型插值得到的时间函数'''
         f = self.timeFunc(kind='cubic')
         return f
 
@@ -210,20 +210,23 @@ class Wavedata(object):
         w = Wavedata(data, self.sRate)
         return w
 
-    def convolve(self, other, mode='same'):
+    def convolve(self, other, mode='same', norm=True): # 未定是否支持复数
         '''卷积
         mode: full, same, valid'''
         if isinstance(other,Wavedata):
             _kernal = other.data
         elif isinstance(other,(np.ndarray,list)):
             _kernal = np.array(other)
-        k_sum = sum(_kernal)
-        kernal = _kernal / k_sum   #归一化kernal，使卷积后的波形总幅度不变
+        if norm:
+            k_sum = sum(_kernal)
+            kernal = _kernal / k_sum   #归一化kernal，使卷积后的波形总幅度不变
+        else:
+            kernal = _kernal
         data = np.convolve(self.data,kernal,mode)
         w = Wavedata(data, self.sRate)
         return w
 
-    def FFT(self, mode='amp',half=True,**kw):
+    def FFT(self, mode='amp',half=True,**kw): # 未定是否支持复数
         '''FFT, 默认波形data为实数序列, 只取一半结果, 为实际物理频谱'''
         sRate = self.size/self.sRate
         # 对于实数序列的FFT，正负频率的分量是相同的
@@ -248,7 +251,7 @@ class Wavedata(object):
         w = Wavedata(data, sRate)
         return w
 
-    def getFFT(self,freq,mode='complex',**kw):
+    def getFFT(self,freq,mode='complex',**kw): # 未定是否支持复数
         ''' 获取指定频率的FFT分量；
         freq: 为一个频率值或者频率的列表，
         返回值: 是对应mode的一个值或列表'''
@@ -258,7 +261,7 @@ class Wavedata(object):
         res_array = fft_w.data[index_freq]
         return res_array
 
-    def high_resample(self,sRate,kind='nearest'):
+    def high_resample(self,sRate,kind='nearest'): # 不支持复数
         '''提高采样率重新采样'''
         assert sRate > self.sRate
         #提高采样率时，新起始点会小于原起始点，新结束点大于原结束点
@@ -273,7 +276,7 @@ class Wavedata(object):
         w = Wavedata.init(timeFunc,domain,sRate)
         return w
 
-    def low_resample(self,sRate,kind='linear'):
+    def low_resample(self,sRate,kind='linear'): # 不支持复数
         '''降低采样率重新采样'''
         assert sRate < self.sRate
         #降低采样率时，新起始点会大于原起始点，新结束点小于原结束点，
@@ -286,7 +289,7 @@ class Wavedata(object):
         w = Wavedata.init(timeFunc,domain,sRate)
         return w
 
-    def resample(self,sRate):
+    def resample(self,sRate): # 不支持复数
         '''改变采样率重新采样'''
         if sRate == self.sRate:
             return self
@@ -295,7 +298,7 @@ class Wavedata(object):
         elif sRate < self.sRate:
             return self.low_resample(sRate)
 
-    def normalize(self):
+    def normalize(self): # 不支持复数
         '''归一化波形，使其分布在(-1,+1)'''
         self.data = self.data/max(abs(self.data))
         return self
@@ -316,19 +319,19 @@ class Wavedata(object):
         w = Wavedata(data,self.sRate)
         return w
 
-    def process(self,func,**kw):
+    def process(self,func,**kw): # 根据具体情况确定是否支持复数
         '''处理，传入一个处理函数func, 输入输出都是(data,sRate)格式'''
         data,sRate = func(self.data,self.sRate,**kw) # 接受额外的参数传递给func
         return Wavedata(data,sRate)
 
-    def filter(self,filter):
+    def filter(self,filter): # 根据具体情况确定是否支持复数
         '''调用filter的process函数处理；
         一般filter是本模块里的Filter类'''
         assert hasattr(filter,'process')
         w = self.process(filter.process)
         return w
 
-    def plot(self, *arg, isfft=False, **kw):
+    def plot(self, *arg, isfft=False, **kw): # 不支持复数
         '''对于FFT变换后的波形数据，包含0频成分，x从0开始；
         使用isfft=True会去除了x的偏移，画出的频谱更准确'''
         ax = plt.gca()
@@ -339,7 +342,7 @@ class Wavedata(object):
         else:
             ax.plot(self.x, self.data, *arg, **kw)
 
-    def plt(self,mode='psd', r=False, **kw):
+    def plt(self,mode='psd', r=False, **kw): # 未定是否支持复数
         '''调用pyplot里与频谱相关的函数画图
         mode 可以为 psd,specgram,magnitude_spectrum,angle_spectrum,phase_spectrum等5个
         (cohere,csd需要两列数据，这里不支持)'''
@@ -401,7 +404,7 @@ def Cos(w, phi=0, width=0, sRate=1e2):
     domain=(0,width)
     return Wavedata.init(timeFunc,domain,sRate)
 
-def Sinc(a, width=1, sRate=1e2):
+def Sinc(width=1, sRate=1e2, a=1):
     timeFunc = lambda t: np.sinc(a*t)
     domain=(-0.5*width,0.5*width)
     return Wavedata.init(timeFunc,domain,sRate)
@@ -412,14 +415,14 @@ def Interpolation(x, y, sRate=1e2, kind='linear'):
     domain = (x[0], x[-1])
     return Wavedata.init(timeFunc,domain,sRate)
 
-def Chirp(width, f0, f1, sRate=1e2, method='linear', phi=0):
+def Chirp(f0, f1, width, sRate=1e2, phi=0, method='linear'):
     '''参考scipy.signal.chirp 啁啾'''
     t1 = width # 结束点
     timeFunc = lambda t: chirp(t, f0, t1, f1, method=method, phi=phi, )
     domain = (0,t1)
     return Wavedata.init(timeFunc,domain,sRate)
 
-def Sweep_poly(width, poly, sRate=1e2, phi=0):
+def Sweep_poly(poly, width, sRate=1e2, phi=0):
     '''参考scipy.signal.sweep_poly 多项式频率'''
     timeFunc = lambda t: sweep_poly(t, poly, phi=0)
     domain = (0,width)
