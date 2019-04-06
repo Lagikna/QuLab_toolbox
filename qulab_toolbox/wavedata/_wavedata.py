@@ -234,13 +234,13 @@ class Wavedata(object):
         # 对于单边谱，即不包含负频成分，实际振幅是正负频振幅的和，所以除了0频成分其他需要再乘以2
         fft_data = fft(self.data,**kw)/self.size
         if mode == 'amp':
-            data =np.abs(fft_data)
+            data = np.abs(fft_data)
         elif mode == 'phase':
-            data =np.angle(fft_data,deg=True)
+            data = np.angle(fft_data,deg=True)
         elif mode == 'real':
-            data =np.real(fft_data)
+            data = np.real(fft_data)
         elif mode == 'imag':
-            data =np.imag(fft_data)
+            data = np.imag(fft_data)
         elif mode == 'complex':
             data = fft_data
         if half:
