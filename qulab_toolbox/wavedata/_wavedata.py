@@ -95,12 +95,12 @@ class Wavedata(object):
 
     def __neg__(self):
         '''负 -w'''
-        w = Wavedata(-self.data, self.sRate)
+        w = self.__class__(-self.data, self.sRate)
         return w
 
     def __abs__(self):
         '''绝对值 abs(w)'''
-        w = Wavedata(np.abs(self.data), self.sRate)
+        w = self.__class__(np.abs(self.data), self.sRate)
         return w
 
     def __rshift__(self, t):
@@ -114,7 +114,7 @@ class Wavedata(object):
             data = np.append(shift_data, self.data[:left_n])
         else:
             data = np.append(self.data[-left_n:], shift_data)
-        w = Wavedata(data, self.sRate)
+        w = self.__class__(data, self.sRate)
         return w
 
     def __lshift__(self, t):
@@ -126,7 +126,7 @@ class Wavedata(object):
         assert isinstance(other,Wavedata)
         assert self.sRate == other.sRate
         data = np.append(self.data,other.data)
-        w = Wavedata(data, self.sRate)
+        w = self.__class__(data, self.sRate)
         return w
 
     def __xor__(self, n):
@@ -136,13 +136,13 @@ class Wavedata(object):
             return self
         else:
             data = list(self.data)*n
-            w = Wavedata(data, self.sRate)
+            w = self.__class__(data, self.sRate)
             return w
 
     def __pow__(self, v):
         '''幂 w**v 波形值的v次幂'''
         data = self.data ** v
-        w = Wavedata(data, self.sRate)
+        w = self.__class__(data, self.sRate)
         return w
 
     def __add__(self, other):
@@ -153,7 +153,7 @@ class Wavedata(object):
             self.setSize(size)
             other.setSize(size)
             data = self.data + other.data
-            w = Wavedata(data, self.sRate)
+            w = self.__class__(data, self.sRate)
             return w
         else:
             return other + self
@@ -161,7 +161,7 @@ class Wavedata(object):
     def __radd__(self, v):
         '''加 v+w 波形值加v，会根据类型判断'''
         data = self.data +v
-        w = Wavedata(data, self.sRate)
+        w = self.__class__(data, self.sRate)
         return w
 
     def __sub__(self, other):
@@ -180,7 +180,7 @@ class Wavedata(object):
             self.setSize(size)
             other.setSize(size)
             data = self.data * other.data
-            w = Wavedata(data, self.sRate)
+            w = self.__class__(data, self.sRate)
             return w
         else:
             return other * self
@@ -188,7 +188,7 @@ class Wavedata(object):
     def __rmul__(self, v):
         '''乘 v*w 波形值相乘，会根据类型判断'''
         data = self.data * v
-        w = Wavedata(data, self.sRate)
+        w = self.__class__(data, self.sRate)
         return w
 
     def __truediv__(self, other):
@@ -199,7 +199,7 @@ class Wavedata(object):
             self.setSize(size)
             other.setSize(size)
             data = self.data / other.data
-            w = Wavedata(data, self.sRate)
+            w = self.__class__(data, self.sRate)
             return w
         else:
             return (1/other) * self
@@ -207,7 +207,7 @@ class Wavedata(object):
     def __rtruediv__(self, v):
         '''除 v/w 波形值相除，会根据类型判断'''
         data = v / self.data
-        w = Wavedata(data, self.sRate)
+        w = self.__class__(data, self.sRate)
         return w
 
     def convolve(self, other, mode='same', norm=True): # 未定是否支持复数
@@ -223,7 +223,7 @@ class Wavedata(object):
         else:
             kernal = _kernal
         data = np.convolve(self.data,kernal,mode)
-        w = Wavedata(data, self.sRate)
+        w = self.__class__(data, self.sRate)
         return w
 
     def FFT(self, mode='amp',half=True,**kw): # 未定是否支持复数
@@ -248,7 +248,7 @@ class Wavedata(object):
             index = int((len(data)+1)/2)-1
             data = data[:index]
             data[1:] = data[1:]*2 #非0频成分乘2
-        w = Wavedata(data, sRate)
+        w = self.__class__(data, sRate)
         return w
 
     def getFFT(self,freq,mode='complex',**kw): # 未定是否支持复数
@@ -264,13 +264,6 @@ class Wavedata(object):
     def high_resample(self,sRate,kind='nearest'): # 不支持复数
         '''提高采样率重新采样'''
         assert sRate > self.sRate
-        #提高采样率时，新起始点会小于原起始点，新结束点大于原结束点
-        #为了插值函数成功插值，在序列前后各加一个点，增大插值范围
-        # dt = 1/self.sRate
-        # x = np.arange(-dt/2, self.len+dt, dt)
-        # _y = np.append(0,self.data)
-        # y = np.append(_y,0)
-        # timeFunc = interpolate.interp1d(x,y,kind=kind)
         timeFunc = self.timeFunc(kind=kind)
         domain = (0,self.len)
         w = Wavedata.init(timeFunc,domain,sRate)
@@ -279,11 +272,6 @@ class Wavedata(object):
     def low_resample(self,sRate,kind='linear'): # 不支持复数
         '''降低采样率重新采样'''
         assert sRate < self.sRate
-        #降低采样率时，新起始点会大于原起始点，新结束点小于原结束点，
-        #插值定义域不会超出，所以不用处理
-        # x = self.x
-        # y = self.data
-        # timeFunc = interpolate.interp1d(x,y,kind=kind)
         timeFunc = self.timeFunc(kind=kind)
         domain = (0,self.len)
         w = Wavedata.init(timeFunc,domain,sRate)
@@ -309,20 +297,20 @@ class Wavedata(object):
         y2=np.append(self.data[1:],0)
         diff_data = (y2-y1)/2 #差分数据，间隔1个点做差分
         data = diff_data*self.sRate #导数，差分值除以 dt
-        w = Wavedata(data,self.sRate)
+        w = self.__class__(data,self.sRate)
         return w
 
     def integrate(self):
         '''求积分，点数不变'''
         cumsum_data = np.cumsum(self.data) #累积
         data = cumsum_data/self.sRate #积分，累积值乘以 dt
-        w = Wavedata(data,self.sRate)
+        w = self.__class__(data,self.sRate)
         return w
 
     def process(self,func,**kw): # 根据具体情况确定是否支持复数
         '''处理，传入一个处理函数func, 输入输出都是(data,sRate)格式'''
         data,sRate = func(self.data,self.sRate,**kw) # 接受额外的参数传递给func
-        return Wavedata(data,sRate)
+        return self.__class__(data,sRate)
 
     def filter(self,filter): # 根据具体情况确定是否支持复数
         '''调用filter的process函数处理；
