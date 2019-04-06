@@ -1,13 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import interpolate
-from scipy.fftpack import fft,ifft
-from scipy.signal import chirp,sweep_poly
+# from scipy import interpolate
+# from scipy.fftpack import fft,ifft
+# from scipy.signal import chirp,sweep_poly
 
-from ._wavedata import Wavedata
+from ._wavedata import *
 
 class WavedataIQ(Wavedata):
-    """基于wavedata类，属性data为复数，实部为I分量，虚部为Q分量，并做了相应改进"""
+    """基于wavedata类，做了相应改进，属性data为复数，实部为I分量，虚部为Q分量"""
+
     def __init__(self, data = [], sRate = 1):
         super(WavedataIQ, self).__init__(data, sRate)
 
@@ -82,11 +83,47 @@ class WavedataIQ(Wavedata):
         return w
 
     @classmethod
-    def trans(cls, wd):
-        '''转化 将一个Wavedata实例转化为WavedataIQ实例'''
-        assert isinstance(wd, Wavedata)
-        return cls(wd.data, wd.sRate)
+    def trans(cls, wdI, wdQ=None):
+        '''转化 将一个或两个Wavedata实例转化为WavedataIQ实例'''
+        assert isinstance(wdI, Wavedata)
+        if wdQ is None:
+            _wdIQ = wdI
+        else:
+            assert isinstance(wdQ, Wavedata)
+            _wdIQ = wdI + 1j*wdQ
+        return cls(_wdIQ.data, _wdIQ.sRate)
 
-    def itrans(self):
-        '''反转化 将实例自身反转化为Wavedata实例，需注意复数问题'''
-        return Wavedata(self.data, self.sRate)
+    def itrans(self, mode='direct'):
+        '''反转化 将实例自身反转化为Wavedata实例，需注意mode'''
+        if mode == 'IQ':
+            dataI = np.real(self.data)
+            dataQ = np.imag(self.data)
+            wdI = Wavedata(dataI, self.sRate)
+            wdQ = Wavedata(dataQ, self.sRate)
+            return wdI, wdQ
+        else:
+            if mode == 'abs':
+                data = np.abs(self.data)
+            elif mode == 'angle':
+                data = np.angle(self.data,deg=True)
+            elif mode == 'real':
+                data = np.real(self.data)
+            elif mode == 'imag':
+                data = np.imag(self.data)
+            elif mode == 'direct':
+                data = self.data
+            return Wavedata(data, self.sRate)
+
+
+def DRAGpulse(width=0, sRate=1e2, a=0.5, TYPE=Gaussian2):
+    '''DRAG波形 a为系数'''
+    I = TYPE(width, sRate)
+    Q = a*I.derivative()
+    return WavedataIQ.trans(I,Q)
+
+def DRAG_wd(wd, a=0.5):
+    '''DRAG给定的Wavedata类波形'''
+    assert isinstance(wd, Wavedata)
+    I = wd
+    Q = a*I.derivative()
+    return WavedataIQ.trans(I,Q)
