@@ -210,7 +210,7 @@ class Wavedata(object):
         w = self.__class__(data, self.sRate)
         return w
 
-    def convolve(self, other, mode='same', norm=True): # 未定是否支持复数
+    def convolve(self, other, mode='same', norm=True):
         '''卷积
         mode: full, same, valid'''
         if isinstance(other,Wavedata):
@@ -226,7 +226,7 @@ class Wavedata(object):
         w = self.__class__(data, self.sRate)
         return w
 
-    def FFT(self, mode='amp',half=True,**kw): # 未定是否支持复数
+    def FFT(self, mode='amp', half=True, **kw): # 支持复数，需做调整
         '''FFT, 默认波形data为实数序列, 只取一半结果, 为实际物理频谱'''
         sRate = self.size/self.sRate
         # 对于实数序列的FFT，正负频率的分量是相同的
@@ -251,17 +251,17 @@ class Wavedata(object):
         w = self.__class__(data, sRate)
         return w
 
-    def getFFT(self,freq,mode='complex',**kw): # 未定是否支持复数
+    def getFFT(self,freq,mode='complex',half=True,**kw): # 支持复数，需做调整
         ''' 获取指定频率的FFT分量；
         freq: 为一个频率值或者频率的列表，
         返回值: 是对应mode的一个值或列表'''
         freq_array=np.array(freq)
-        fft_w = self.FFT(mode=mode,half=True,**kw)
+        fft_w = self.FFT(mode=mode,half=half,**kw)
         index_freq = np.around(freq_array*fft_w.sRate).astype(int)
         res_array = fft_w.data[index_freq]
         return res_array
 
-    def high_resample(self,sRate,kind='nearest'): # 支持复数与timeFunc一致
+    def high_resample(self,sRate,kind='nearest'): # 复数支持与timeFunc一致
         '''提高采样率重新采样'''
         assert sRate > self.sRate
         timeFunc = self.timeFunc(kind=kind)
@@ -269,7 +269,7 @@ class Wavedata(object):
         w = self.__class__.init(timeFunc,domain,sRate)
         return w
 
-    def low_resample(self,sRate,kind='linear'): # 支持复数与timeFunc一致
+    def low_resample(self,sRate,kind='linear'): # 复数支持与timeFunc一致
         '''降低采样率重新采样'''
         assert sRate < self.sRate
         timeFunc = self.timeFunc(kind=kind)
@@ -277,7 +277,7 @@ class Wavedata(object):
         w = self.__class__.init(timeFunc,domain,sRate)
         return w
 
-    def resample(self,sRate): # 支持复数与timeFunc一致
+    def resample(self,sRate): # 复数支持与timeFunc一致
         '''改变采样率重新采样'''
         if sRate == self.sRate:
             return self
@@ -326,11 +326,11 @@ class Wavedata(object):
         if isfft:
             dt=1/self.sRate
             x = np.arange(0, self.len-dt/2, dt)
-            ax.plot(x, self.data, *arg, **kw)
         else:
-            ax.plot(self.x, self.data, *arg, **kw)
+            x = self.x
+        ax.plot(x, self.data, *arg, **kw)
 
-    def plt(self,mode='psd', r=False, **kw): # 未定是否支持复数
+    def plt(self, mode='psd', r=False, **kw): # 支持复数，需要具体了解
         '''调用pyplot里与频谱相关的函数画图
         mode 可以为 psd,specgram,magnitude_spectrum,angle_spectrum,phase_spectrum等5个
         (cohere,csd需要两列数据，这里不支持)'''
@@ -342,6 +342,7 @@ class Wavedata(object):
 
 
 def Blank(width=0, sRate=1e2):
+    '''空波形'''
     timeFunc = lambda x: 0
     domain=(0, width)
     return Wavedata.init(timeFunc,domain,sRate)
@@ -353,16 +354,19 @@ def Noise_wgn(width=0, sRate=1e2):
     return Wavedata(data,sRate)
 
 def DC(width=0, sRate=1e2):
+    '''方波'''
     timeFunc = lambda x: 1
     domain=(0, width)
     return Wavedata.init(timeFunc,domain,sRate)
 
 def Triangle(width=1, sRate=1e2):
+    '''三角波'''
     timeFunc = lambda x: 1-np.abs(2/width*x)
     domain=(-0.5*width,0.5*width)
     return Wavedata.init(timeFunc,domain,sRate)
 
 def Gaussian(width=1, sRate=1e2):
+    '''高斯波形'''
     c = width/(4*np.sqrt(2*np.log(2)))
     timeFunc = lambda x: np.exp(-0.5*(x/c)**2)
     domain=(-0.5*width,0.5*width)

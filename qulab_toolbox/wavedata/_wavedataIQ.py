@@ -12,7 +12,7 @@ class WavedataIQ(Wavedata):
     def __init__(self, data = [], sRate = 1):
         super(WavedataIQ, self).__init__(data, sRate)
 
-    ###### 以下为不支持复数的属性和方法，对它们进行覆盖，没有列出的为直接继承
+    ###### 以下为wavedata不支持复数的属性和方法，对它们进行覆盖，没有列出的为直接继承
     def timeFunc(self,kind='cubic'):  # 改进后支持复数
         '''对实部和虚部分别插值，得到复数的时间函数，默认cubic插值'''
         _timeFuncI = self.real().timeFunc(kind=kind)
@@ -20,14 +20,11 @@ class WavedataIQ(Wavedata):
         _timeFunc = lambda x: _timeFuncI(x) + 1j*_timeFuncQ(x)
         return _timeFunc
 
-    def convolve(self, other, mode='same', norm=True): # 未定是否支持复数
-        return None
+    def FFT(self,mode='amp',**kw): # 支持复数，更改默认行为
+        return super(WavedataIQ, self).FFT(self,mode=mode,half=False,**kw)
 
-    def FFT(self, mode='amp',half=True,**kw): # 未定是否支持复数
-        return None
-
-    def getFFT(self,freq,mode='complex',**kw): # 未定是否支持复数
-        return None
+    def getFFT(self,freq,mode='complex',**kw): # 支持复数，更改默认行为
+        return super(WavedataIQ, self).getFFT(self,freq,mode=mode,half=False,**kw)
 
     def normalize(self): # 改进后支持复数
         '''归一化 取实部和虚部绝对值的最大值进行归一'''
@@ -35,12 +32,17 @@ class WavedataIQ(Wavedata):
         self.data = self.data/v_max
         return self
 
-    def plot(self, *arg, mode='both', **kw): # 改进后支持复数
+    def plot(self, *arg, mode='both', isfft=False, **kw): # 改进后支持复数
         '''画图'''
         ax = plt.gca()
+        if isfft:
+            dt=1/self.sRate
+            x = np.arange(0, self.len-dt/2, dt)
+        else:
+            x = self.x
         if mode == 'both':
-            ax.plot(self.x, np.real(self.data), *arg, label='real', **kw)
-            ax.plot(self.x, np.imag(self.data), *arg, label='imag', **kw)
+            ax.plot(x, np.real(self.data), *arg, label='real', **kw)
+            ax.plot(x, np.imag(self.data), *arg, label='imag', **kw)
         else:
             if mode == 'abs':
                 data = np.abs(self.data)
@@ -50,11 +52,8 @@ class WavedataIQ(Wavedata):
                 data = np.real(self.data)
             elif mode == 'imag':
                 data = np.imag(self.data)
-            ax.plot(self.x, data, *arg, label=mode, **kw)
+            ax.plot(x, data, *arg, label=mode, **kw)
         plt.legend(loc = 'best')
-
-    def plt(self,mode='psd', r=False, **kw): # 未定是否支持复数
-        pass
 
     ###### 以下为WavedataIQ专有的属性和方法
     @property
@@ -110,9 +109,9 @@ class WavedataIQ(Wavedata):
             return Wavedata(data, self.sRate)
 
 
-def DRAGpulse(width=0, sRate=1e2, a=0.5, TYPE=Gaussian2):
+def DRAGpulse(width=0, sRate=1e2, a=0.5, TYPE=Gaussian2, **kw):
     '''DRAG波形 a为系数'''
-    I = TYPE(width, sRate)
+    I = TYPE(width, sRate, **kw)
     Q = a*I.derivative()
     return WavedataIQ.trans(I,Q)
 
@@ -122,3 +121,8 @@ def DRAG_wd(wd, a=0.5):
     I = wd
     Q = a*I.derivative()
     return WavedataIQ.trans(I,Q)
+
+def Exp(w, phi=0, width=0, sRate=1e2):
+    timeFunc = lambda t: np.exp(1j*(w*t+phi))
+    domain=(0,width)
+    return WavedataIQ.init(timeFunc,domain,sRate)
