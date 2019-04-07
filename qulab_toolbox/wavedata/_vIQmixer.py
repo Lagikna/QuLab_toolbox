@@ -1,5 +1,6 @@
 import numpy as np
 from ._wavedata import Wavedata,Sin,Cos
+from ._wavedataIQ import WavedataIQ
 
 '''Wavedata 虚拟IQ混频器模块'''
 
@@ -21,14 +22,19 @@ class vIQmixer(object):
         self._cali_rf = (1,0)
         self._RF = None
 
-    def set_IQ(self,I=0,Q=0):
-        '''I/Q, at least one Wavedata class'''
-        self._I = I
-        self._Q = Q
-        if I == 0:
-            self._I = 0*Q
-        elif Q == 0:
-            self._Q = 0*I
+    def set_IQ(self,I=0,Q=0,IQ=None):
+        '''I/Q至少一个是Wavedata类，IQ是WavedataIQ类'''
+        if IQ is None:
+            self._I = I
+            self._Q = Q
+            if I == 0:
+                self._I = 0*Q
+            elif Q == 0:
+                self._Q = 0*I
+        else:
+            assert isinstance(IQ,WavedataIQ)
+            self._I = IQ.real()
+            self._Q = IQ.imag()
         assert isinstance(self._I,Wavedata) and isinstance(self._Q,Wavedata)
         assert self._I.size==self._Q.size and self._I.sRate==self._Q.sRate
         self.len = self._I.len
@@ -82,9 +88,9 @@ class vIQmixer(object):
         return self
 
     @classmethod
-    def up_conversion(cls,LO_freq,I=0,Q=0,cali_array=None,cali_rf=None):
+    def up_conversion(cls,LO_freq,I=0,Q=0,IQ=None,cali_array=None,cali_rf=None):
         '''快速配置并上变频'''
-        vIQ=cls().set_LO(LO_freq).set_IQ(I,Q).set_Cali(cali_array).UpConversion()
+        vIQ=cls().set_LO(LO_freq).set_IQ(I,Q,IQ).set_Cali(cali_array).UpConversion()
         if cali_rf is not None:
             vIQ.set_CaliRF(cali_rf)
         return vIQ._RF

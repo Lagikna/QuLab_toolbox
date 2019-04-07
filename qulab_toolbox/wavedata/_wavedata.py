@@ -328,7 +328,8 @@ class Wavedata(object):
             x = np.arange(0, self.len-dt/2, dt)
         else:
             x = self.x
-        ax.plot(x, self.data, *arg, **kw)
+        data = np.real(self.data) # 如果data中包含复数，画图时只使用实部
+        ax.plot(x, data, *arg, **kw)
 
     def plt(self, mode='psd', r=False, **kw): # 支持复数，需要具体了解
         '''调用pyplot里与频谱相关的函数画图
