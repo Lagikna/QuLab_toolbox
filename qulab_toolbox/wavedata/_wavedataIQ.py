@@ -7,18 +7,18 @@ import matplotlib.pyplot as plt
 from ._wavedata import *
 
 class WavedataIQ(Wavedata):
-    """基于wavedata类，做了相应改进，属性data为复数，实部为I分量，虚部为Q分量"""
+    """基于wavedata类，针对复数做了相应改进，属性data的实部为I分量，虚部为Q分量"""
 
     def __init__(self, data = [], sRate = 1):
         super(WavedataIQ, self).__init__(data, sRate)
 
     ###### 以下为不支持复数的属性和方法，对它们进行覆盖，没有列出的为直接继承
-    def timeFunc(self,kind='cubic'):  # 不支持复数
-        return None
-
-    @property
-    def f(self): # 不支持复数
-        return None
+    def timeFunc(self,kind='cubic'):  # 改进后支持复数
+        '''对实部和虚部分别插值，得到复数的时间函数，默认cubic插值'''
+        _timeFuncI = self.real().timeFunc(kind=kind)
+        _timeFuncQ = self.imag().timeFunc(kind=kind)
+        _timeFunc = lambda x: _timeFuncI(x) + 1j*_timeFuncQ(x)
+        return _timeFunc
 
     def convolve(self, other, mode='same', norm=True): # 未定是否支持复数
         return None
@@ -29,19 +29,14 @@ class WavedataIQ(Wavedata):
     def getFFT(self,freq,mode='complex',**kw): # 未定是否支持复数
         return None
 
-    def high_resample(self,sRate,kind='nearest'): # 不支持复数
-        return None
-
-    def low_resample(self,sRate,kind='linear'): # 不支持复数
-        return None
-
-    def resample(self,sRate): # 不支持复数
-        return None
-
-    def normalize(self): # 不支持复数
-        pass
+    def normalize(self): # 改进后支持复数
+        '''归一化 取实部和虚部绝对值的最大值进行归一'''
+        v_max = max(abs(np.append(np.real(self.data),np.imag(self.data))))
+        self.data = self.data/v_max
+        return self
 
     def plot(self, *arg, mode='both', **kw): # 改进后支持复数
+        '''画图'''
         ax = plt.gca()
         if mode == 'both':
             ax.plot(self.x, np.real(self.data), *arg, label='real', **kw)

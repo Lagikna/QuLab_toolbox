@@ -50,7 +50,7 @@ class Wavedata(object):
         return x
 
     @property
-    def f(self): # 不支持复数
+    def f(self): # 支持复数与timeFunc一致
         '''返回根据属性data进行cubic类型插值得到的时间函数'''
         f = self.timeFunc(kind='cubic')
         return f
@@ -261,23 +261,23 @@ class Wavedata(object):
         res_array = fft_w.data[index_freq]
         return res_array
 
-    def high_resample(self,sRate,kind='nearest'): # 不支持复数
+    def high_resample(self,sRate,kind='nearest'): # 支持复数与timeFunc一致
         '''提高采样率重新采样'''
         assert sRate > self.sRate
         timeFunc = self.timeFunc(kind=kind)
         domain = (0,self.len)
-        w = Wavedata.init(timeFunc,domain,sRate)
+        w = self.__class__.init(timeFunc,domain,sRate)
         return w
 
-    def low_resample(self,sRate,kind='linear'): # 不支持复数
+    def low_resample(self,sRate,kind='linear'): # 支持复数与timeFunc一致
         '''降低采样率重新采样'''
         assert sRate < self.sRate
         timeFunc = self.timeFunc(kind=kind)
         domain = (0,self.len)
-        w = Wavedata.init(timeFunc,domain,sRate)
+        w = self.__class__.init(timeFunc,domain,sRate)
         return w
 
-    def resample(self,sRate): # 不支持复数
+    def resample(self,sRate): # 支持复数与timeFunc一致
         '''改变采样率重新采样'''
         if sRate == self.sRate:
             return self
