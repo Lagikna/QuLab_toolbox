@@ -33,8 +33,8 @@ class vIQmixer(object):
                 self._Q = 0*I
         else:
             assert isinstance(IQ,WavedataIQ)
-            self._I = IQ.real()
-            self._Q = IQ.imag()
+            self._I = IQ.I()
+            self._Q = IQ.Q()
         assert isinstance(self._I,Wavedata) and isinstance(self._Q,Wavedata)
         assert self._I.size==self._Q.size and self._I.sRate==self._Q.sRate
         self.len = self._I.len

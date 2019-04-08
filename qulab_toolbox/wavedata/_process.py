@@ -6,7 +6,8 @@ from scipy.fftpack import fft,ifft
 
 def normalize(data, sRate):
     '''归一化波形，使其分布在(-1,+1)'''
-    _data = data/max(abs(data))
+    v_max = max(abs(np.append(np.real(data),np.imag(data))))
+    _data = data/v_max
     return _data, sRate
 
 def integrate(data, sRate):
