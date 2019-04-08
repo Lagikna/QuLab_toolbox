@@ -286,9 +286,10 @@ class Wavedata(object):
         elif sRate < self.sRate:
             return self.low_resample(sRate)
 
-    def normalize(self): # 不支持复数
-        '''归一化波形，使其分布在(-1,+1)'''
-        self.data = self.data/max(abs(self.data))
+    def normalize(self):
+        '''归一化 取实部和虚部绝对值的最大值进行归一，使分布在(-1,+1)'''
+        v_max = max(abs(np.append(np.real(self.data),np.imag(self.data))))
+        self.data = self.data/v_max
         return self
 
     def derivative(self):
@@ -323,13 +324,13 @@ class Wavedata(object):
         '''对于FFT变换后的波形数据，包含0频成分，x从0开始；
         使用isfft=True会去除了x的偏移，画出的频谱更准确'''
         ax = plt.gca()
+        ax.set_title('Wavedata')
         if isfft:
             dt=1/self.sRate
             x = np.arange(0, self.len-dt/2, dt)
         else:
             x = self.x
-        data = np.real(self.data) # 如果data中包含复数，画图时只使用实部
-        ax.plot(x, data, *arg, **kw)
+        ax.plot(x, self.data, *arg, **kw)
 
     def plt(self, mode='psd', r=False, **kw): # 支持复数，需要具体了解
         '''调用pyplot里与频谱相关的函数画图
