@@ -23,8 +23,9 @@ class vIQmixer(object):
         self._RF = None
 
     def set_IQ(self,I=0,Q=0,IQ=None):
-        '''I/Q至少一个是Wavedata类，IQ是WavedataIQ类'''
+        '''I/Q至少一个是Wavedata类，或者传入IQ波形'''
         if IQ is None:
+            assert isinstance(I,Wavedata) or isinstance(Q,Wavedata)
             self._I = I
             self._Q = Q
             if I == 0:
@@ -32,10 +33,10 @@ class vIQmixer(object):
             elif Q == 0:
                 self._Q = 0*I
         else:
-            assert isinstance(IQ,WavedataIQ)
+            assert isinstance(IQ,Wavedata)
             self._I = IQ.I()
             self._Q = IQ.Q()
-        assert isinstance(self._I,Wavedata) and isinstance(self._Q,Wavedata)
+        assert not self._I.isIQ and not self._Q.isIQ
         assert self._I.size==self._Q.size and self._I.sRate==self._Q.sRate
         self.len = self._I.len
         self.sRate = self._I.sRate
