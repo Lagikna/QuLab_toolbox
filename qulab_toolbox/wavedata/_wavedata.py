@@ -15,16 +15,6 @@ class Wavedata(object):
         self.data = np.array(data)
         self.sRate = sRate
 
-    def timeFunc(self,kind='cubic'):  # 不支持复数
-        '''返回波形插值得到的时间函数，默认cubic插值'''
-        #为了更好地插值，在插值序列x/y前后各加一个点，增大插值范围
-        dt = 1/self.sRate
-        x = np.arange(-dt/2, self.len+dt, dt)
-        _y = np.append(0,self.data)
-        y = np.append(_y,0)
-        _timeFunc = interpolate.interp1d(x,y,kind=kind,bounds_error=False,fill_value=(0,0))
-        return _timeFunc
-
     @staticmethod
     def generateData(timeFunc, domain=(0,1), sRate=1e2):
         '''给定函数、定义域、采样率，生成data序列'''
@@ -43,11 +33,26 @@ class Wavedata(object):
         return cls(data,sRate)
 
     @property
+    def isIQ(self):
+        '''是否为IQ类型 即data是否包含复数'''
+        return np.any(np.iscomplex(self.data))
+
+    @property
     def x(self):
         '''返回波形的时间列表'''
         dt=1/self.sRate
         x = np.arange(dt/2, self.len, dt)
         return x
+
+    @property
+    def real(self):
+        '''data实部'''
+        return np.real(self.data)
+
+    @property
+    def imag(self):
+        '''data虚部'''
+        return np.imag(self.data)
 
     @property
     def f(self): # 支持复数与timeFunc一致
@@ -66,6 +71,47 @@ class Wavedata(object):
         '''返回波形点数'''
         size = len(self.data)
         return size
+
+    def I(self):
+        '''I波形 返回Wavedata类'''
+        w = self.__class__(np.real(self.data), self.sRate)
+        return w
+
+    def Q(self):
+        '''Q波形 返回Wavedata类'''
+        w = self.__class__(np.imag(self.data), self.sRate)
+        return w
+
+    def trans(self,mode='real'):
+        '''对于IQ波形转化成其他几种格式'''
+        if mode == 'amp':
+            data = np.abs(self.data)
+        elif mode == 'phase':
+            data = np.angle(self.data,deg=True)
+        elif mode == 'real':
+            data = np.real(self.data)
+        elif mode == 'imag':
+            data = np.imag(self.data)
+        w = self.__class__(data, self.sRate)
+        return w
+
+    def timeFunc(self,kind='cubic'):
+        '''返回波形插值得到的时间函数，默认cubic插值'''
+        #为了更好地插值，在插值序列x/y前后各加一个点，增大插值范围
+        dt = 1/self.sRate
+        x = np.arange(-dt/2, self.len+dt, dt)
+        _y = np.append(0,self.data)
+        y = np.append(_y,0)
+        if self.isIQ:
+            _timeFuncI = interpolate.interp1d(x,np.real(y),kind=kind,
+                            bounds_error=False,fill_value=(0,0))
+            _timeFuncQ = interpolate.interp1d(x,np.imag(y),kind=kind,
+                            bounds_error=False,fill_value=(0,0))
+            _timeFunc = lambda x: _timeFuncI(x) + 1j*_timeFuncQ(x)
+        else:
+            _timeFunc = interpolate.interp1d(x,y,kind=kind,
+                            bounds_error=False,fill_value=(0,0))
+        return _timeFunc
 
     def setLen(self,length):
         '''设置长度，增大补0，减小截取'''
@@ -226,7 +272,7 @@ class Wavedata(object):
         w = self.__class__(data, self.sRate)
         return w
 
-    def FFT(self, mode='amp', half=True, **kw): # 支持复数，需做调整
+    def FFT(self, mode='complex', half=True, **kw): # 支持复数，需做调整
         '''FFT, 默认波形data为实数序列, 只取一半结果, 为实际物理频谱'''
         sRate = self.size/self.sRate
         # 对于实数序列的FFT，正负频率的分量是相同的
@@ -251,7 +297,7 @@ class Wavedata(object):
         w = self.__class__(data, sRate)
         return w
 
-    def getFFT(self,freq,mode='complex',half=True,**kw): # 支持复数，需做调整
+    def getFFT(self,freq,mode='complex',half=True,**kw):
         ''' 获取指定频率的FFT分量；
         freq: 为一个频率值或者频率的列表，
         返回值: 是对应mode的一个值或列表'''
@@ -266,7 +312,7 @@ class Wavedata(object):
         assert sRate > self.sRate
         timeFunc = self.timeFunc(kind=kind)
         domain = (0,self.len)
-        w = self.__class__.init(timeFunc,domain,sRate)
+        w = self.init(timeFunc,domain,sRate)
         return w
 
     def low_resample(self,sRate,kind='linear'): # 复数支持与timeFunc一致
@@ -274,7 +320,7 @@ class Wavedata(object):
         assert sRate < self.sRate
         timeFunc = self.timeFunc(kind=kind)
         domain = (0,self.len)
-        w = self.__class__.init(timeFunc,domain,sRate)
+        w = self.init(timeFunc,domain,sRate)
         return w
 
     def resample(self,sRate): # 复数支持与timeFunc一致
@@ -320,17 +366,23 @@ class Wavedata(object):
         w = self.process(filter.process)
         return w
 
-    def plot(self, *arg, isfft=False, **kw): # 不支持复数
+    def plot(self, *arg, isfft=False, **kw):
         '''对于FFT变换后的波形数据，包含0频成分，x从0开始；
         使用isfft=True会去除了x的偏移，画出的频谱更准确'''
         ax = plt.gca()
-        ax.set_title('Wavedata')
         if isfft:
             dt=1/self.sRate
             x = np.arange(0, self.len-dt/2, dt)
         else:
             x = self.x
-        ax.plot(x, self.data, *arg, **kw)
+        if self.isIQ:
+            ax.set_title('Wavedata-IQ')
+            ax.plot(x, np.real(self.data), *arg, label='real', **kw)
+            ax.plot(x, np.imag(self.data), *arg, label='imag', **kw)
+            plt.legend(loc = 'best')
+        else:
+            ax.set_title('Wavedata')
+            ax.plot(x, self.data, *arg, **kw)
 
     def plt(self, mode='psd', r=False, **kw): # 支持复数，需要具体了解
         '''调用pyplot里与频谱相关的函数画图
