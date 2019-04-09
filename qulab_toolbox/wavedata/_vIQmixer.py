@@ -1,6 +1,5 @@
 import numpy as np
 from ._wavedata import Wavedata,Sin,Cos
-from ._wavedataIQ import WavedataIQ
 
 '''Wavedata 虚拟IQ混频器模块'''
 
