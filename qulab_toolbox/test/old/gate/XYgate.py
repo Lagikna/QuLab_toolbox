@@ -1,5 +1,5 @@
 import numpy as np
-from ..wavedata import *
+from qulab_toolbox.wavedata import *
 
 def gen_XY_by_index(index, pi_len, half_pi_len, pi_factor, half_pi_factor, sRate, TYPE=Gaussian):
     '''通过给定的参数和索引，产生相应的波形脉冲；

@@ -84,14 +84,16 @@ class Wavedata(object):
 
     def trans(self,mode='real'):
         '''对于IQ波形转化成其他几种格式'''
-        if mode == 'amp':
+        if mode in ['amp','abs']: #振幅或绝对值
             data = np.abs(self.data)
-        elif mode == 'phase':
+        elif mode in ['phase','angle']: #相位或辐角
             data = np.angle(self.data,deg=True)
-        elif mode == 'real':
+        elif mode == 'real': #实部
             data = np.real(self.data)
-        elif mode == 'imag':
+        elif mode == 'imag': #虚部
             data = np.imag(self.data)
+        elif mode == 'conj': #复共轭
+            data = np.conj(self.data)
         w = self.__class__(data, self.sRate)
         return w
 
@@ -279,9 +281,9 @@ class Wavedata(object):
         # 对于双边谱，即包含负频率成分的，除以size N 得到实际振幅
         # 对于单边谱，即不包含负频成分，实际振幅是正负频振幅的和，所以除了0频成分其他需要再乘以2
         fft_data = fft(self.data,**kw)/self.size
-        if mode == 'amp':
+        if mode in ['amp','abs']:
             data = np.abs(fft_data)
-        elif mode == 'phase':
+        elif mode in ['phase','angle']:
             data = np.angle(fft_data,deg=True)
         elif mode == 'real':
             data = np.real(fft_data)

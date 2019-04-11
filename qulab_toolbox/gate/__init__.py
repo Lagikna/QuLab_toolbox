@@ -1,2 +1,1 @@
-from .clifford import *
-from .XYgate import *
+from ._cliffordGroup import cliffordGroup
