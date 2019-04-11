@@ -94,6 +94,8 @@ class Wavedata(object):
             data = np.imag(self.data)
         elif mode == 'conj': #复共轭
             data = np.conj(self.data)
+        elif mode == 'exchange': #交换实部和虚部
+            data = 1j*np.conj(self.data)
         w = self.__class__(data, self.sRate)
         return w
 
