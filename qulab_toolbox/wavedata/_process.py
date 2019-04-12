@@ -32,9 +32,9 @@ def FFT(data, sRate, mode='amp',half=True,**kw):
     # 对于双边谱，即包含负频率成分的，除以size N 得到实际振幅
     # 对于单边谱，即不包含负频成分，实际振幅是正负频振幅的和，所以除了0频成分其他需要再乘以2
     fft_data = fft(data,**kw)/size
-    if mode == 'amp':
+    if mode in ['amp','abs']:
         _data =np.abs(fft_data)
-    elif mode == 'phase':
+    elif mode in ['phase','angle']:
         _data =np.angle(fft_data,deg=True)
     elif mode == 'real':
         _data =np.real(fft_data)

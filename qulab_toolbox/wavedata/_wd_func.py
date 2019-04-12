@@ -17,6 +17,7 @@ def DRAG_wd(wd, a=0.5):
     return I+1j*Q
 
 def Exp(w, phi=0, width=0, sRate=1e2):
+    ''''''
     timeFunc = lambda t: np.exp(1j*(w*t+phi))
     domain=(0,width)
     return Wavedata.init(timeFunc,domain,sRate)
