@@ -20,3 +20,16 @@ def Homodyne(wd, freq=50e6, cali=None):
         ])
         res_wd.data[i]=complex(*np.real(rotate*_wd.data[i]))
     return res_wd
+
+def Homodyne2(wd, freq=50e6, cali=None):
+    '''把信号按一定频率旋转，得到IQ相图'''
+    amp=wd.trans('abs')
+    phase=wd.trans('angle') #角度
+    _func=lambda t: 360*freq*t
+    _domain=(0,wd.len)
+    _sRate=wd.sRate
+    _rotate=Wavedata.init(_func,_domain,_sRate)
+    _phase=phase-_rotate
+    res_data=amp.data*np.exp(1j*2*np.pi/360*_phase.data)
+    res_wd=Wavedata(res_data,wd.sRate)
+    return res_wd
