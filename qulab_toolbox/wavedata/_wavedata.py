@@ -2,11 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate
 from scipy.fftpack import fft,ifft
-from scipy.signal import chirp,sweep_poly
 
-__all__ = ['Wavedata', 'Blank', 'Noise_wgn', 'DC', 'Triangle', 'Gaussian',
-    'Gaussian2', 'CosPulse','Sin', 'Cos', 'Sinc',
-    'Interpolation', 'Chirp', 'Sweep_poly']
 
 class Wavedata(object):
 
@@ -398,95 +394,3 @@ class Wavedata(object):
         res = plt_func(x=self.data,Fs=self.sRate,**kw)
         if r:
             return res
-
-
-def Blank(width=0, sRate=1e2):
-    '''空波形'''
-    timeFunc = lambda x: 0
-    domain=(0, width)
-    return Wavedata.init(timeFunc,domain,sRate)
-
-def Noise_wgn(width=0, sRate=1e2):
-    '''产生高斯白噪声序列，注意序列未归一化'''
-    size = np.around(width * sRate).astype(int)
-    data = np.random.randn(size)
-    return Wavedata(data,sRate)
-
-def DC(width=0, sRate=1e2):
-    '''方波'''
-    timeFunc = lambda x: 1
-    domain=(0, width)
-    return Wavedata.init(timeFunc,domain,sRate)
-
-def Triangle(width=1, sRate=1e2):
-    '''三角波'''
-    timeFunc = lambda x: 1-np.abs(2/width*x)
-    domain=(-0.5*width,0.5*width)
-    return Wavedata.init(timeFunc,domain,sRate)
-
-def Gaussian(width=1, sRate=1e2):
-    '''高斯波形'''
-    c = width/(4*np.sqrt(2*np.log(2)))
-    timeFunc = lambda x: np.exp(-0.5*(x/c)**2)
-    domain=(-0.5*width,0.5*width)
-    return Wavedata.init(timeFunc,domain,sRate)
-
-def Gaussian2(width=1,sRate=1e2,a=5):
-    '''修正的高斯波形, a是width和方差的比值'''
-    c = width/a # 方差
-    # 减去由于截取造成的台阶, 使边缘为0, 并归一化
-    y0 = np.exp(-0.5*(width/2/c)**2)
-    timeFunc = lambda x: (np.exp(-0.5*(x/c)**2)-y0)/(1-y0)
-    domain=(-0.5*width,0.5*width)
-    return Wavedata.init(timeFunc,domain,sRate)
-
-def CosPulse(width=1, sRate=1e2):
-    timeFunc = lambda x: (np.cos(2*np.pi/width*x)+1)/2
-    domain=(-0.5*width,0.5*width)
-    return Wavedata.init(timeFunc,domain,sRate)
-
-def Sin(w, phi=0, width=0, sRate=1e2):
-    timeFunc = lambda t: np.sin(w*t+phi)
-    domain=(0,width)
-    return Wavedata.init(timeFunc,domain,sRate)
-
-def Cos(w, phi=0, width=0, sRate=1e2):
-    timeFunc = lambda t: np.cos(w*t+phi)
-    domain=(0,width)
-    return Wavedata.init(timeFunc,domain,sRate)
-
-def Sinc(width=1, sRate=1e2, a=1):
-    timeFunc = lambda t: np.sinc(a*t)
-    domain=(-0.5*width,0.5*width)
-    return Wavedata.init(timeFunc,domain,sRate)
-
-def Interpolation(x, y, sRate=1e2, kind='linear'):
-    '''参考scipy.interpolate.interp1d 插值'''
-    timeFunc = interpolate.interp1d(x, y, kind=kind)
-    domain = (x[0], x[-1])
-    return Wavedata.init(timeFunc,domain,sRate)
-
-def Chirp(f0, f1, width, sRate=1e2, phi=0, method='linear'):
-    '''参考scipy.signal.chirp 啁啾'''
-    t1 = width # 结束点
-    timeFunc = lambda t: chirp(t, f0, t1, f1, method=method, phi=phi, )
-    domain = (0,t1)
-    return Wavedata.init(timeFunc,domain,sRate)
-
-def Sweep_poly(poly, width, sRate=1e2, phi=0):
-    '''参考scipy.signal.sweep_poly 多项式频率'''
-    timeFunc = lambda t: sweep_poly(t, poly, phi=0)
-    domain = (0,width)
-    return Wavedata.init(timeFunc,domain,sRate)
-
-
-if __name__ == "__main__":
-    a=Sin(w=1, width=10, phi=0, sRate=1000)
-    b=Gaussian(2,sRate=1000)
-    c=Blank(1,sRate=1000)
-
-    m=(0.5*a|c|b|c|b+1|c|a+0.5).setLen(20)>>5
-    n=m.convolve(b)
-    m.plot()
-    n.plot()
-    plt.show()
