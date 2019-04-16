@@ -2,14 +2,14 @@ import numpy as np
 # import matplotlib.pyplot as plt
 from ._wavedata import *
 
-def DRAGpulse(width=0, sRate=1e2, a=0.5, TYPE=Gaussian2, **kw):
-    '''DRAG波形 a为系数'''
+def DRAGpulse(width=0, sRate=1e2, a=0.5, TYPE=CosPulse, **kw):
+    '''IQ类型 DRAG波形,a为系数'''
     I = TYPE(width, sRate, **kw)
     Q = a*I.derivative()
     return I+1j*Q
 
 def DRAG_wd(wd, a=0.5):
-    '''DRAG给定的Wavedata类波形'''
+    '''IQ类型 DRAG给定的Wavedata类波形'''
     assert isinstance(wd, Wavedata)
     assert not wd.isIQ
     I = wd
@@ -17,7 +17,7 @@ def DRAG_wd(wd, a=0.5):
     return I+1j*Q
 
 def Exp(w, phi=0, width=0, sRate=1e2):
-    ''''''
+    '''IQ类型 复数正弦信号'''
     timeFunc = lambda t: np.exp(1j*(w*t+phi))
     domain=(0,width)
     return Wavedata.init(timeFunc,domain,sRate)

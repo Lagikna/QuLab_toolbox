@@ -281,7 +281,8 @@ class Wavedata(object):
         sRate = self.size/self.sRate
         # 对于实数序列的FFT，正负频率的分量是相同的
         # 对于双边谱，即包含负频率成分的，除以size N 得到实际振幅
-        # 对于单边谱，即不包含负频成分，实际振幅是正负频振幅的和，所以除了0频成分其他需要再乘以2
+        # 对于单边谱，即不包含负频成分，实际振幅是正负频振幅的和，
+        # 所以除了0频成分其他需要再乘以2
         fft_data = fft(self.data,**kw)/self.size
         if mode in ['amp','abs']:
             data = np.abs(fft_data)
@@ -370,7 +371,7 @@ class Wavedata(object):
         w = self.process(filter.process)
         return w
 
-    def plot(self, *arg, isfft=False, **kw):
+    def plot(self, fmt1='', fmt2='--', isfft=False, **kw):
         '''对于FFT变换后的波形数据，包含0频成分，x从0开始；
         使用isfft=True会去除了x的偏移，画出的频谱更准确'''
         ax = plt.gca()
@@ -381,17 +382,17 @@ class Wavedata(object):
             x = self.x
         if self.isIQ:
             ax.set_title('Wavedata-IQ')
-            ax.plot(x, np.real(self.data), *arg, label='real', **kw)
-            ax.plot(x, np.imag(self.data), *arg, label='imag', **kw)
+            ax.plot(x, np.real(self.data), fmt1, label='real', **kw)
+            ax.plot(x, np.imag(self.data), fmt2, label='imag', **kw)
             plt.legend(loc = 'best')
         else:
             ax.set_title('Wavedata')
-            ax.plot(x, self.data, *arg, **kw)
+            ax.plot(x, self.data, fmt1, **kw)
 
     def plt(self, mode='psd', r=False, **kw): # 支持复数，需要具体了解
         '''调用pyplot里与频谱相关的函数画图
-        mode 可以为 psd,specgram,magnitude_spectrum,angle_spectrum,phase_spectrum等5个
-        (cohere,csd需要两列数据，这里不支持)'''
+        mode 可以为 psd,specgram,magnitude_spectrum,angle_spectrum,
+        phase_spectrum等5个(cohere,csd需要两列数据，这里不支持)'''
         ax = plt.gca()
         plt_func = getattr(plt,mode)
         res = plt_func(x=self.data,Fs=self.sRate,**kw)

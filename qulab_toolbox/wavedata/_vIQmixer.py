@@ -1,5 +1,6 @@
 import numpy as np
 from ._wavedata import Wavedata,Sin,Cos
+from ._wd_func import Exp
 
 '''Wavedata 虚拟IQ混频器模块'''
 
@@ -59,8 +60,8 @@ class vIQmixer(object):
     def UpConversion(self):
         '''需要先 set_IQ, set_LO, set_Cali, 再使用此方法'''
         cali_phi_i, cali_phi_q = self._cali_phi
-        rf_wd = self.__IQ.I() * Sin(2*np.pi*self.LO_freq,cali_phi_i,self.len,self.sRate) + \
-                self.__IQ.Q() * Cos(2*np.pi*self.LO_freq,cali_phi_q,self.len,self.sRate)
+        rf_wd = self.__IQ.I() * Cos(2*np.pi*self.LO_freq,cali_phi_i,self.len,self.sRate) - \
+                self.__IQ.Q() * Sin(2*np.pi*self.LO_freq,cali_phi_q,self.len,self.sRate)
         self._RF = rf_wd
         return self
 
@@ -100,8 +101,16 @@ class vIQmixer(object):
         if IQ is None:
             IQ=I+1j*Q
 
-        carry_I = IQ.I()*Sin(2*np.pi*carry_freq,_phi_I,IQ.len,IQ.sRate)*_scale_I+_offset_I
-        carry_Q = IQ.Q()*Cos(2*np.pi*carry_freq,_phi_Q,IQ.len,IQ.sRate)*_scale_Q+_offset_Q
+        # 理想情况下的载波IQ, 未校准
+        _carry_IQ = IQ*Exp(2*np.pi*carry_freq,0,IQ.len,IQ.sRate)
+
+        # 相位校准，等效于进行波形时移，时移大小由相位误差、频率等决定
+        shift_I = _phi_I/(2*np.pi*carry_freq)
+        shift_Q = _phi_Q/(2*np.pi*carry_freq)
+
+        # I/Q分别进行校准
+        carry_I = (_carry_IQ.I()<<shift_I)*_scale_I+_offset_I
+        carry_Q = (_carry_IQ.Q()<<shift_Q)*_scale_Q+_offset_Q
 
         carry_wd=carry_I+1j*carry_Q
         return carry_wd
