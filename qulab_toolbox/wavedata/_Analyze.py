@@ -11,32 +11,35 @@ from ._wd_func import *
 def Homodyne(wd, freq=50e6, cali=None, DEG=True):
     '''把信号按一定频率旋转，得到解调的IQ'''
     if cali is None:
-        cali = [[1,0,0],
-                [1,0,0]]
-    _cali = np.array(cali)
-    _scale_I, _offset_I = _cali[0,:2]
-    _scale_Q, _offset_Q = _cali[1,:2]
-    if DEG:
-        _phi_I, _phi_Q = _cali[:,2]*np.pi/180  #转为弧度
+        res_wd=wd*Exp(-2*np.pi*freq,0,wd.len,wd.sRate)
+        return res_wd
     else:
-        _phi_I, _phi_Q = _cali[:,2]
+        _cali = np.array(cali)
+        _scale_I, _offset_I = _cali[0,:2]
+        _scale_Q, _offset_Q = _cali[1,:2]
+        #转为弧度
+        _phi_I, _phi_Q = _cali[:,2]*np.pi/180 if DEG else _cali[:,2]
 
-    # 相位校准，等效于进行波形时移，时移大小由相位误差、频率等决定
-    _shift_I = _phi_I/(2*np.pi*freq)
-    _shift_Q = _phi_Q/(2*np.pi*freq)
+        # 相位校准，等效于进行波形时移，时移大小由相位误差、频率等决定
+        shift_I = _phi_I/(2*np.pi*freq) if not freq==0 else 0
+        shift_Q = _phi_Q/(2*np.pi*freq) if not freq==0 else 0
 
-    # 反向校准，与vIQmixer中carry_wave校准相反
-    _wd_I=((wd.I()>>_shift_I)-_offset_I)/_scale_I
-    _wd_Q=((wd.Q()>>_shift_Q)-_offset_Q)/_scale_Q
+        # 相位校准，将I/Q插值函数平移后重新采样
+        func_I = lambda x: wd.I().timeFunc(kind='cubic')(x-shift_I)
+        _wd_I = Wavedata.init(func_I,(0,wd.len),wd.sRate)
+        func_Q = lambda x: wd.Q().timeFunc(kind='cubic')(x-shift_Q)
+        _wd_Q = Wavedata.init(func_Q,(0,wd.len),wd.sRate)
 
-    _wd=_wd_I+1j*_wd_Q
-    res_wd=_wd*Exp(-2*np.pi*freq,0,wd.len,wd.sRate)
-    return res_wd
+        # 反向校准，与vIQmixer中carry_wave校准相反
+        _wd_I=(_wd_I-_offset_I)/_scale_I
+        _wd_Q=(_wd_Q-_offset_Q)/_scale_Q
+
+        _wd=_wd_I+1j*_wd_Q
+        res_wd=_wd*Exp(-2*np.pi*freq,0,wd.len,wd.sRate)
+        return res_wd
 
 def Analyze_cali(wd, freq=50e6, DEG=True):
-    '''根据IQ波形计算校正序列；
-    振幅和补偿系数计算准确性好，
-    相位系数准确性较差，与采样率有关，'''
+    '''根据IQ波形计算校正序列,准确性好'''
     para_I=wd.I().getFFT([0,freq],mode='complex',half=True)
     para_Q=wd.Q().getFFT([0,freq],mode='complex',half=True)
 

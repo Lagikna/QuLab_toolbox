@@ -43,10 +43,8 @@ class vIQmixer(object):
         _cali_array = np.array(cali_array)
         self._cali_amp_I = _cali_array[0,:2]
         self._cali_amp_Q = _cali_array[1,:2]
-        if DEG:
-            self._cali_phi = _cali_array[:,2]*np.pi/180  #转为弧度
-        else:
-            self._cali_phi = _cali_array[:,2]
+        #转为弧度
+        self._cali_phi = _cali_array[:,2]*np.pi/180 if DEG else _cali_array[:,2]
         self.__Cali_IQ()
         return self
 
@@ -87,31 +85,34 @@ class vIQmixer(object):
     def carry_wave(cls,carry_freq=0,I=0,Q=0,IQ=None,carry_cali=None,DEG=True):
         '''将I/Q分别加载某个频率的载波，
         carry_cali对应实体IQ混频器的校准矩阵，与上面cali_array格式相同'''
-        if carry_cali is None:
-            carry_cali = [[1,0,0],
-                          [1,0,0]]
-        _carry_cali = np.array(carry_cali)
-        _scale_I, _offset_I = _carry_cali[0,:2]
-        _scale_Q, _offset_Q = _carry_cali[1,:2]
-        if DEG:
-            _phi_I, _phi_Q = _carry_cali[:,2]*np.pi/180  #转为弧度
-        else:
-            _phi_I, _phi_Q = _carry_cali[:,2]
-
         if IQ is None:
             IQ=I+1j*Q
-
         # 理想情况下的载波IQ, 未校准
-        _carry_IQ = IQ*Exp(2*np.pi*carry_freq,0,IQ.len,IQ.sRate)
+        carry_IQ = IQ*Exp(2*np.pi*carry_freq,0,IQ.len,IQ.sRate)
 
-        # 相位校准，等效于进行波形时移，时移大小由相位误差、频率等决定
-        # 如果载波频率为0，则不进行相位校准
-        shift_I = _phi_I/(2*np.pi*carry_freq) if not carry_freq==0 else 0
-        shift_Q = _phi_Q/(2*np.pi*carry_freq) if not carry_freq==0 else 0
+        if carry_cali is None:
+            return carry_IQ
+        else:
+            _carry_cali = np.array(carry_cali)
+            _scale_I, _offset_I = _carry_cali[0,:2]
+            _scale_Q, _offset_Q = _carry_cali[1,:2]
+            #转为弧度
+            _phi_I, _phi_Q = _carry_cali[:,2]*np.pi/180 if DEG else _carry_cali[:,2]
 
-        # I/Q分别进行校准
-        carry_I = (_carry_IQ.I()<<shift_I)*_scale_I+_offset_I
-        carry_Q = (_carry_IQ.Q()<<shift_Q)*_scale_Q+_offset_Q
+            # 相位校准，等效于进行波形时移，时移大小由相位误差、频率等决定
+            # 如果载波频率为0，则不进行相位校准
+            shift_I = _phi_I/(2*np.pi*carry_freq) if not carry_freq==0 else 0
+            shift_Q = _phi_Q/(2*np.pi*carry_freq) if not carry_freq==0 else 0
 
-        carry_wd=carry_I+1j*carry_Q
-        return carry_wd
+            # 相位校准，将原插值函数平移后重新采样
+            func_I = lambda x: carry_IQ.I().timeFunc(kind='cubic')(x+shift_I)
+            carry_I = Wavedata.init(func_I,(0,IQ.len),IQ.sRate)
+            func_Q = lambda x: carry_IQ.Q().timeFunc(kind='cubic')(x+shift_Q)
+            carry_Q = Wavedata.init(func_Q,(0,IQ.len),IQ.sRate)
+
+            # 进行振幅校准
+            carry_I = carry_I*_scale_I+_offset_I
+            carry_Q = carry_Q*_scale_Q+_offset_Q
+
+            carry_IQ=carry_I+1j*carry_Q
+            return carry_IQ
