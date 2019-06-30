@@ -52,16 +52,6 @@ class Wavedata(object):
         return x
 
     @property
-    def real(self):
-        '''data实部'''
-        return np.real(self.data)
-
-    @property
-    def imag(self):
-        '''data虚部'''
-        return np.imag(self.data)
-
-    @property
     def f(self): # 支持复数与timeFunc一致
         '''返回根据属性data进行cubic类型插值得到的时间函数'''
         f = self.timeFunc(kind='cubic')
@@ -73,11 +63,14 @@ class Wavedata(object):
         length = self.size/self.sRate
         return length
 
-    @property
-    def size(self):
-        '''返回波形点数'''
-        size = len(self.data)
-        return size
+    def __getattr__(self,item):
+        if item in ['real','imag','size']: # ndarray attribute
+            return getattr(self.data,item)
+        elif item in ['max','min','argmax','argmin','clip',
+            'conj','mean','ptp','round','std','sum']: # ndarray method
+            return getattr(self.data,item)
+        else:
+            raise AttributeError('No such attribute!')
 
     def I(self):
         '''I波形 返回Wavedata类'''
@@ -416,15 +409,14 @@ class WavedataN(object):
     """docstring for WavedataN."""
 
     def __init__(self, array=None):
-        self.__array = np.array(array)
+        _array = np.array(array)
+        # 对传入的序列进行处理，使所有元素都是Wavedata类
+        __array=np.where(np.frompyfunc(isinstance,2,1)(_array,Wavedata),_array,Wavedata())
+        self.__array = __array
 
     @property
     def array(self):
         return self.__array
-
-    @property
-    def shape(self):
-        return self.array.shape
 
     def vectorize(self,pyfunc,**kw):
         return np.vectorize(pyfunc,**kw)(self.array)
@@ -435,17 +427,24 @@ class WavedataN(object):
             return self.vectorize(pyfunc)
         elif item in ['data','x','real','imag']:
             pyfunc=lambda wd: getattr(wd,item)
-            signature='()->(n)'
-            return self.vectorize(pyfunc,signature=signature)
+            return self.vectorize(pyfunc,otypes=[object])
+        elif item in ['shape','ndim','dtype','flat',
+            'size','itemsize',]: # ndarray attribute
+            return getattr(self.array,item)
+        else:
+            raise AttributeError('No such attribute!')
 
     @classmethod
     def init(cls,dataN,sRateN):
-        _dN=np.array(dataN)
-        _srN=np.array(sRateN)
+        dN=np.array(dataN)
+        srN=np.array(sRateN)
         wd_gen=lambda d,sr: Wavedata(d,sr)
-        signature='(n),()->()'
+        if dN.ndim-1==srN.ndim: # 每个序列的点数相同
+            signature='(n),()->()'
+        elif dN.ndim==srN.ndim: # 各个序列的点数不同
+            signature='(),()->()'
         vec_wd_gen=np.vectorize(wd_gen,signature=signature)
-        array=vec_wd_gen(_dN,_srN)
+        array=vec_wd_gen(dN,srN)
         return cls(array)
 
     def __pos__(self):
