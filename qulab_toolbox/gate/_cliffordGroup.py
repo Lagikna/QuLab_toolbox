@@ -106,7 +106,7 @@ class cliffordGroup(GateGroup):
         # i_r=list(np.random.choice(group,size=int(size)))
         res=np.array([])
         for i in range(int(size)):
-            _r=np.append(ref, np.random.choice(group,1))
+            _r=np.append(np.random.choice(group,1), ref)
             res=np.append(res, _r).astype(np.int32)
         return list(res)
 
@@ -158,9 +158,10 @@ class cliffordGroup(GateGroup):
                         pulse_wd_IQ=-1j*half_pi_factor*TYPE(half_pi_len,sRate)
         return pulse_wd_IQ
 
-    def rbm_wd(self, indexseq, pi_array, sRate, buffer=0, TYPE=Gaussian2):
+    def rbm_wd(self, indexseq, pi_array, sRate, buffer=0, TYPE=Gaussian2, check=False):
         '''根据索引序列产生波形序列'''
-        assert self.check_seq(indexseq)
+        if check:
+            assert self.check_seq(indexseq)
         pi_len, pi_factor, half_pi_len, half_pi_factor = pi_array
         res_wd=Wavedata(sRate=sRate)
         buffer_wd=Blank(buffer,sRate)

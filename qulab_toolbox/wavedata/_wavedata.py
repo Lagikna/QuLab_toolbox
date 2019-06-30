@@ -8,8 +8,19 @@ class Wavedata(object):
 
     def __init__(self, data = [], sRate = 1):
         '''给定序列和采样率，构造Wavedata'''
-        self.data = np.array(data)
-        self.sRate = sRate
+        self.__data = np.array(data)
+        assert self.__data.ndim==1
+        self.__sRate = sRate
+
+    @property
+    def data(self):
+        '''只读'''
+        return self.__data
+
+    @property
+    def sRate(self):
+        '''只读'''
+        return self.__sRate
 
     @staticmethod
     def generateData(timeFunc, domain=(0,1), sRate=1e2):
@@ -124,10 +135,11 @@ class Wavedata(object):
         s = self.size
         if n > s:
             append_data=np.zeros(n-s)
-            self.data = np.append(self.data, append_data)
+            data = np.append(self.data, append_data)
         else:
-            self.data = self.data[:n]
-        return self
+            data = self.data[:n]
+        w = self.__class__(data, self.sRate)
+        return w
 
     def __call__(self, t):
         '''w(t) 返回某个时间点的最近邻值'''
@@ -336,8 +348,9 @@ class Wavedata(object):
     def normalize(self):
         '''归一化 取实部和虚部绝对值的最大值进行归一，使分布在(-1,+1)'''
         v_max = max(abs(np.append(np.real(self.data),np.imag(self.data))))
-        self.data = self.data/v_max
-        return self
+        data = self.data/v_max
+        w = self.__class__(data, self.sRate)
+        return w
 
     def derivative(self):
         '''求导，点数不变'''
@@ -367,23 +380,26 @@ class Wavedata(object):
         w = self.process(filter.process)
         return w
 
-    def plot(self, fmt1='', fmt2='--', isfft=False, **kw):
+    def plot(self, fmt1='', fmt2='--', isfft=False, ax=None, **kw):
         '''对于FFT变换后的波形数据，包含0频成分，x从0开始；
         使用isfft=True会去除了x的偏移，画出的频谱更准确'''
-        ax = plt.gca()
+        if ax is None:
+            ax = plt.gca()
         if isfft:
             dt=1/self.sRate
             x = np.arange(0, self.len-dt/2, dt)
         else:
             x = self.x
         if self.isIQ:
-            ax.set_title('Wavedata-IQ')
-            ax.plot(x, np.real(self.data), fmt1, label='real', **kw)
-            ax.plot(x, np.imag(self.data), fmt2, label='imag', **kw)
+            # ax.set_title('Wavedata-IQ')
+            line1 = ax.plot(x, np.real(self.data), fmt1, label='real', **kw)
+            line2 = ax.plot(x, np.imag(self.data), fmt2, label='imag', **kw)
             plt.legend(loc = 'best')
+            return [line1, line2]
         else:
-            ax.set_title('Wavedata')
-            ax.plot(x, self.data, fmt1, **kw)
+            # ax.set_title('Wavedata')
+            line1 = ax.plot(x, self.data, fmt1, **kw)
+            return [line1, ]
 
     def plt(self, mode='psd', r=False, **kw): # 支持复数，需要具体了解
         '''调用pyplot里与频谱相关的函数画图
@@ -394,3 +410,128 @@ class Wavedata(object):
         res = plt_func(x=self.data,Fs=self.sRate,**kw)
         if r:
             return res
+
+
+class WavedataN(object):
+    """docstring for WavedataN."""
+
+    def __init__(self, array=None):
+        self.__array = np.array(array)
+
+    @property
+    def array(self):
+        return self.__array
+
+    @property
+    def shape(self):
+        return self.array.shape
+
+    def vectorize(self,pyfunc,**kw):
+        return np.vectorize(pyfunc,**kw)(self.array)
+
+    def __getattr__(self,item):
+        if item in ['sRate','isIQ','f','len','size',]:
+            pyfunc=lambda wd: getattr(wd,item)
+            return self.vectorize(pyfunc)
+        elif item in ['data','x','real','imag']:
+            pyfunc=lambda wd: getattr(wd,item)
+            signature='()->(n)'
+            return self.vectorize(pyfunc,signature=signature)
+
+    @classmethod
+    def init(cls,dataN,sRateN):
+        _dN=np.array(dataN)
+        _srN=np.array(sRateN)
+        wd_gen=lambda d,sr: Wavedata(d,sr)
+        signature='(n),()->()'
+        vec_wd_gen=np.vectorize(wd_gen,signature=signature)
+        array=vec_wd_gen(_dN,_srN)
+        return cls(array)
+
+    def __pos__(self):
+        return self
+
+    def __neg__(self):
+        array=-self.array
+        return self.__class__(array)
+
+    def __abs__(self):
+        array=np.abs(self.array)
+        return self.__class__(array)
+
+    def __rshift__(self, t):
+        array=self.array>>t
+        return self.__class__(array)
+
+    def __lshift__(self, t):
+        array=self.array<<t
+        return self.__class__(array)
+
+    def __or__(self, other):
+        assert isinstance(other,WavedataN)
+        assert self.shape == other.shape
+        array=self.array|other.array
+        return self.__class__(array)
+
+    def __xor__(self, n):
+        n = int(n)
+        if n <= 1:
+            return self
+        else:
+            array=self.array^n
+            return self.__class__(array)
+
+    def __pow__(self, v):
+        array=self.array**v
+        return self.__class__(array)
+
+    def __add__(self, other):
+        if isinstance(other,WavedataN):
+            assert self.shape == other.shape
+            array = self.array + other.array
+            return self.__class__(array)
+        else:
+            return other + self
+
+    def __radd__(self, v):
+        array = self.array + v
+        return self.__class__(array)
+
+    def __sub__(self, other):
+        return self + (- other)
+
+    def __rsub__(self, v):
+        return v + (-self)
+
+    def __mul__(self, other):
+        if isinstance(other,WavedataN):
+            assert self.shape == other.shape
+            array = self.array * other.array
+            return self.__class__(array)
+        else:
+            return other * self
+
+    def __rmul__(self, v):
+        array = self.array * v
+        return self.__class__(array)
+
+    def __truediv__(self, other):
+        if isinstance(other,WavedataN):
+            assert self.shape == other.shape
+            array = self.array / other.array
+            return self.__class__(array)
+        else:
+            return (1/other) * self
+
+    def __rtruediv__(self, v):
+        array = v / self.array
+        return self.__class__(array)
+
+    def plot(self,**kw):
+        array = self.array.flatten()
+        row, = array.shape
+        fig,ax = plt.subplots(row,1,figsize=(10,row),sharex=True)
+        plt.subplots_adjust(hspace=0)
+        for i in range(row):
+            array[i].plot(ax=ax[i])
+        return fig,ax
