@@ -1,4 +1,4 @@
-from ._wavedata import Wavedata
+from ._wavedata import Wavedata, WavedataN
 from ._wd_func import *
 from ._vIQmixer import vIQmixer
 from . import _Filter as F

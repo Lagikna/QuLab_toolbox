@@ -8,8 +8,19 @@ class Wavedata(object):
 
     def __init__(self, data = [], sRate = 1):
         '''给定序列和采样率，构造Wavedata'''
-        self.data = np.array(data)
-        self.sRate = sRate
+        self.__data = np.array(data)
+        assert self.__data.ndim==1
+        self.__sRate = sRate
+
+    @property
+    def data(self):
+        '''只读'''
+        return self.__data
+
+    @property
+    def sRate(self):
+        '''只读'''
+        return self.__sRate
 
     @staticmethod
     def generateData(timeFunc, domain=(0,1), sRate=1e2):
@@ -41,16 +52,6 @@ class Wavedata(object):
         return x
 
     @property
-    def real(self):
-        '''data实部'''
-        return np.real(self.data)
-
-    @property
-    def imag(self):
-        '''data虚部'''
-        return np.imag(self.data)
-
-    @property
     def f(self): # 支持复数与timeFunc一致
         '''返回根据属性data进行cubic类型插值得到的时间函数'''
         f = self.timeFunc(kind='cubic')
@@ -62,21 +63,24 @@ class Wavedata(object):
         length = self.size/self.sRate
         return length
 
-    @property
-    def size(self):
-        '''返回波形点数'''
-        size = len(self.data)
-        return size
+    def __getattr__(self,item):
+        if item in ['real','imag','size']: # ndarray attribute
+            return getattr(self.data,item)
+        elif item in ['max','min','argmax','argmin','clip',
+            'conj','mean','ptp','round','std','sum']: # ndarray method
+            return getattr(self.data,item)
+        else:
+            raise AttributeError('No such attribute!')
 
     def I(self):
         '''I波形 返回Wavedata类'''
-        w = self.__class__(np.real(self.data), self.sRate)
-        return w
+        wd = self.__class__(np.real(self.data), self.sRate)
+        return wd
 
     def Q(self):
         '''Q波形 返回Wavedata类'''
-        w = self.__class__(np.imag(self.data), self.sRate)
-        return w
+        wd = self.__class__(np.imag(self.data), self.sRate)
+        return wd
 
     def trans(self,mode='real'):
         '''对于IQ波形转化成其他几种格式'''
@@ -92,8 +96,8 @@ class Wavedata(object):
             data = np.conj(self.data)
         elif mode == 'exchange': #交换实部和虚部
             data = 1j*np.conj(self.data)
-        w = self.__class__(data, self.sRate)
-        return w
+        wd = self.__class__(data, self.sRate)
+        return wd
 
     def timeFunc(self,kind='cubic'):
         '''返回波形插值得到的时间函数，默认cubic插值'''
@@ -113,44 +117,61 @@ class Wavedata(object):
                             bounds_error=False,fill_value=(0,0))
         return _timeFunc
 
-    def setLen(self,length):
-        '''设置长度，增大补0，减小截取'''
-        n = np.around(abs(length)*self.sRate).astype(int)
-        return self.setSize(n)
+    def setRange(self,a,b):
+        '''设置波形点数范围，如果a,b超出点数的上下限，则补0'''
+        a = np.around(a).astype(int)
+        b = np.around(b).astype(int)
+        s = self.size
+        assert b > a and a < s and b > 0
+        append_left=np.zeros(-a) if a < 0 else []
+        append_right=np.zeros(b-s) if b > s else []
+        data_cut=self.data[a:b] if a>0 else self.data[0:b]
+        _data = np.append(data_cut, append_right)
+        data = np.append(append_left, _data)
+        wd = self.__class__(data, self.sRate)
+        return wd
+
+    def setRangeL(self,la,lb):
+        '''设置波形长度范围，如果la,lb超出长度的上下限，则补0'''
+        a = np.around(la*self.sRate).astype(int)
+        b = np.around(lb*self.sRate).astype(int)
+        return self.setRange(a,b)
 
     def setSize(self,size):
         '''设置点数，增多补0，减少截取'''
-        n = np.around(size).astype(int)
-        s = self.size
-        if n > s:
-            append_data=np.zeros(n-s)
-            self.data = np.append(self.data, append_data)
-        else:
-            self.data = self.data[:n]
-        return self
+        return self.setRange(0,size)
+
+    def setLen(self,length):
+        '''设置长度，增大补0，减小截取'''
+        return self.setRangeL(0,length)
+
+    def __len__(self):
+        '''len(wd) 返回点数'''
+        return self.size
 
     def __call__(self, t):
-        '''w(t) 返回某个时间点的最近邻值'''
+        '''wd(t) 返回某个时间点的最近邻值'''
         dt = 1/self.sRate
         idx = np.around(t/dt-0.5).astype(int)
         return self.data[idx]
 
     def __pos__(self):
-        '''正 +w'''
+        '''正 +wd'''
         return self
 
     def __neg__(self):
-        '''负 -w'''
-        w = self.__class__(-self.data, self.sRate)
-        return w
+        '''负 -wd'''
+        wd = self.__class__(-self.data, self.sRate)
+        return wd
 
     def __abs__(self):
-        '''绝对值 abs(w)'''
-        w = self.__class__(np.abs(self.data), self.sRate)
-        return w
+        '''绝对值 abs(wd)'''
+        wd = self.__class__(np.abs(self.data), self.sRate)
+        return wd
 
     def __rshift__(self, t):
-        '''右移 w>>t 长度不变'''
+        '''右移 wd>>t 长度不变'''
+        t=float(t)
         if abs(t)>self.len:
             raise TypeError('shift is too large !')
         n = np.around(abs(t)*self.sRate).astype(int)
@@ -160,101 +181,102 @@ class Wavedata(object):
             data = np.append(shift_data, self.data[:left_n])
         else:
             data = np.append(self.data[-left_n:], shift_data)
-        w = self.__class__(data, self.sRate)
-        return w
+        wd = self.__class__(data, self.sRate)
+        return wd
 
     def __lshift__(self, t):
-        '''左移 t<<w 长度不变'''
+        '''左移 wd<<t 长度不变'''
+        t=float(t)
         return self >> (-t)
 
     def __or__(self, other):
-        '''或 w|o 串联波形'''
+        '''或 wd|o 串联波形'''
         assert isinstance(other,Wavedata)
         assert self.sRate == other.sRate
         data = np.append(self.data,other.data)
-        w = self.__class__(data, self.sRate)
-        return w
+        wd = self.__class__(data, self.sRate)
+        return wd
 
     def __xor__(self, n):
-        '''异或 w^n 串联n个波形'''
+        '''异或 wd^n 串联n个波形'''
         n = int(n)
         if n <= 1:
             return self
         else:
             data = list(self.data)*n
-            w = self.__class__(data, self.sRate)
-            return w
+            wd = self.__class__(data, self.sRate)
+            return wd
 
     def __pow__(self, v):
-        '''幂 w**v 波形值的v次幂'''
+        '''幂 wd**v 波形值的v次幂'''
         data = self.data ** v
-        w = self.__class__(data, self.sRate)
-        return w
+        wd = self.__class__(data, self.sRate)
+        return wd
 
     def __add__(self, other):
-        '''加 w+o 波形值相加，会根据类型判断'''
+        '''加 wd+o 波形值相加，会根据类型判断'''
         if isinstance(other,Wavedata):
             assert self.sRate == other.sRate
             size = max(self.size, other.size)
             self.setSize(size)
             other.setSize(size)
             data = self.data + other.data
-            w = self.__class__(data, self.sRate)
-            return w
+            wd = self.__class__(data, self.sRate)
+            return wd
         else:
             return other + self
 
     def __radd__(self, v):
-        '''加 v+w 波形值加v，会根据类型判断'''
-        data = self.data +v
-        w = self.__class__(data, self.sRate)
-        return w
+        '''加 v+wd 波形值加v，会根据类型判断'''
+        data = self.data + v
+        wd = self.__class__(data, self.sRate)
+        return wd
 
     def __sub__(self, other):
-        '''减 w-o 波形值相减，会根据类型判断'''
+        '''减 wd-o 波形值相减，会根据类型判断'''
         return self + (- other)
 
     def __rsub__(self, v):
-        '''减 v-w 波形值相减，会根据类型判断'''
+        '''减 v-wd 波形值相减，会根据类型判断'''
         return v + (-self)
 
     def __mul__(self, other):
-        '''乘 w*o 波形值相乘，会根据类型判断'''
+        '''乘 wd*o 波形值相乘，会根据类型判断'''
         if isinstance(other,Wavedata):
             assert self.sRate == other.sRate
             size = max(self.size, other.size)
             self.setSize(size)
             other.setSize(size)
             data = self.data * other.data
-            w = self.__class__(data, self.sRate)
-            return w
+            wd = self.__class__(data, self.sRate)
+            return wd
         else:
             return other * self
 
     def __rmul__(self, v):
-        '''乘 v*w 波形值相乘，会根据类型判断'''
+        '''乘 v*wd 波形值相乘，会根据类型判断'''
         data = self.data * v
-        w = self.__class__(data, self.sRate)
-        return w
+        wd = self.__class__(data, self.sRate)
+        return wd
 
     def __truediv__(self, other):
-        '''除 w/o 波形值相除，会根据类型判断'''
+        '''除 wd/o 波形值相除，会根据类型判断'''
         if isinstance(other,Wavedata):
             assert self.sRate == other.sRate
             size = max(self.size, other.size)
             self.setSize(size)
             other.setSize(size)
             data = self.data / other.data
-            w = self.__class__(data, self.sRate)
-            return w
+            wd = self.__class__(data, self.sRate)
+            return wd
         else:
             return (1/other) * self
 
     def __rtruediv__(self, v):
-        '''除 v/w 波形值相除，会根据类型判断'''
+        '''除 v/wd 波形值相除，会根据类型判断'''
         data = v / self.data
-        w = self.__class__(data, self.sRate)
-        return w
+        wd = self.__class__(data, self.sRate)
+        return wd
 
     def convolve(self, other, mode='same', norm=True):
         '''卷积
@@ -269,8 +291,8 @@ class Wavedata(object):
         else:
             kernal = _kernal
         data = np.convolve(self.data,kernal,mode)
-        w = self.__class__(data, self.sRate)
-        return w
+        wd = self.__class__(data, self.sRate)
+        return wd
 
     def FFT(self, mode='complex', half=True, **kw): # 支持复数，需做调整
         '''FFT, 默认波形data为实数序列, 只取一半结果, 为实际物理频谱'''
@@ -295,17 +317,17 @@ class Wavedata(object):
             index = int((len(data)+1)/2)-1
             data = data[:index]
             data[1:] = data[1:]*2 #非0频成分乘2
-        w = self.__class__(data, sRate)
-        return w
+        wd = self.__class__(data, sRate)
+        return wd
 
     def getFFT(self,freq,mode='complex',half=True,**kw):
         ''' 获取指定频率的FFT分量；
         freq: 为一个频率值或者频率的列表，
         返回值: 是对应mode的一个值或列表'''
         freq_array=np.array(freq)
-        fft_w = self.FFT(mode=mode,half=half,**kw)
-        index_freq = np.around(freq_array*fft_w.sRate).astype(int)
-        res_array = fft_w.data[index_freq]
+        fft_wd = self.FFT(mode=mode,half=half,**kw)
+        index_freq = np.around(freq_array*fft_wd.sRate).astype(int)
+        res_array = fft_wd.data[index_freq]
         return res_array
 
     def high_resample(self,sRate,kind='nearest'): # 复数支持与timeFunc一致
@@ -313,16 +335,16 @@ class Wavedata(object):
         assert sRate > self.sRate
         timeFunc = self.timeFunc(kind=kind)
         domain = (0,self.len)
-        w = self.init(timeFunc,domain,sRate)
-        return w
+        wd = self.init(timeFunc,domain,sRate)
+        return wd
 
     def low_resample(self,sRate,kind='linear'): # 复数支持与timeFunc一致
         '''降低采样率重新采样'''
         assert sRate < self.sRate
         timeFunc = self.timeFunc(kind=kind)
         domain = (0,self.len)
-        w = self.init(timeFunc,domain,sRate)
-        return w
+        wd = self.init(timeFunc,domain,sRate)
+        return wd
 
     def resample(self,sRate): # 复数支持与timeFunc一致
         '''改变采样率重新采样'''
@@ -336,8 +358,9 @@ class Wavedata(object):
     def normalize(self):
         '''归一化 取实部和虚部绝对值的最大值进行归一，使分布在(-1,+1)'''
         v_max = max(abs(np.append(np.real(self.data),np.imag(self.data))))
-        self.data = self.data/v_max
-        return self
+        data = self.data/v_max
+        wd = self.__class__(data, self.sRate)
+        return wd
 
     def derivative(self):
         '''求导，点数不变'''
@@ -345,15 +368,15 @@ class Wavedata(object):
         y2=np.append(self.data[1:],0)
         diff_data = (y2-y1)/2 #差分数据，间隔1个点做差分
         data = diff_data*self.sRate #导数，差分值除以 dt
-        w = self.__class__(data,self.sRate)
-        return w
+        wd = self.__class__(data,self.sRate)
+        return wd
 
     def integrate(self):
         '''求积分，点数不变'''
         cumsum_data = np.cumsum(self.data) #累积
         data = cumsum_data/self.sRate #积分，累积值乘以 dt
-        w = self.__class__(data,self.sRate)
-        return w
+        wd = self.__class__(data,self.sRate)
+        return wd
 
     def process(self,func,**kw): # 根据具体情况确定是否支持复数
         '''处理，传入一个处理函数func, 输入输出都是(data,sRate)格式'''
@@ -364,26 +387,29 @@ class Wavedata(object):
         '''调用filter的process函数处理；
         一般filter是本模块里的Filter类'''
         assert hasattr(filter,'process')
-        w = self.process(filter.process)
-        return w
+        wd = self.process(filter.process)
+        return wd
 
-    def plot(self, fmt1='', fmt2='--', isfft=False, **kw):
+    def plot(self, fmt1='', fmt2='--', isfft=False, ax=None, **kw):
         '''对于FFT变换后的波形数据，包含0频成分，x从0开始；
         使用isfft=True会去除了x的偏移，画出的频谱更准确'''
-        ax = plt.gca()
+        if ax is None:
+            ax = plt.gca()
         if isfft:
             dt=1/self.sRate
             x = np.arange(0, self.len-dt/2, dt)
         else:
             x = self.x
         if self.isIQ:
-            ax.set_title('Wavedata-IQ')
-            ax.plot(x, np.real(self.data), fmt1, label='real', **kw)
-            ax.plot(x, np.imag(self.data), fmt2, label='imag', **kw)
+            # ax.set_title('Wavedata-IQ')
+            line1 = ax.plot(x, np.real(self.data), fmt1, label='real', **kw)
+            line2 = ax.plot(x, np.imag(self.data), fmt2, label='imag', **kw)
             plt.legend(loc = 'best')
+            return [line1, line2]
         else:
-            ax.set_title('Wavedata')
-            ax.plot(x, self.data, fmt1, **kw)
+            # ax.set_title('Wavedata')
+            line1 = ax.plot(x, self.data, fmt1, **kw)
+            return [line1, ]
 
     def plt(self, mode='psd', r=False, **kw): # 支持复数，需要具体了解
         '''调用pyplot里与频谱相关的函数画图
@@ -394,3 +420,134 @@ class Wavedata(object):
         res = plt_func(x=self.data,Fs=self.sRate,**kw)
         if r:
             return res
+
+
+class WavedataN(object):
+    """docstring for WavedataN."""
+
+    def __init__(self, array=None):
+        _array = np.array(array)
+        # 对传入的序列进行处理，使所有元素都是Wavedata类
+        __array=np.where(np.frompyfunc(isinstance,2,1)(_array,Wavedata),_array,Wavedata())
+        self.__array = __array
+
+    @property
+    def array(self):
+        return self.__array
+
+    def vectorize(self,pyfunc,**kw):
+        return np.vectorize(pyfunc,**kw)(self.array)
+
+    def __getattr__(self,item):
+        if item in ['sRate','isIQ','f','len','size',]:
+            pyfunc=lambda wd: getattr(wd,item)
+            return self.vectorize(pyfunc)
+        elif item in ['data','x','real','imag']:
+            pyfunc=lambda wd: getattr(wd,item)
+            return self.vectorize(pyfunc,otypes=[object])
+        elif item in ['shape','ndim','dtype','flat',
+            'size','itemsize',]: # ndarray attribute
+            return getattr(self.array,item)
+        else:
+            raise AttributeError('No such attribute!')
+
+    @classmethod
+    def init(cls,dataN,sRateN):
+        dN=np.array(dataN)
+        srN=np.array(sRateN)
+        wd_gen=lambda d,sr: Wavedata(d,sr)
+        if dN.ndim-1==srN.ndim: # 每个序列的点数相同
+            signature='(n),()->()'
+        elif dN.ndim==srN.ndim: # 各个序列的点数不同
+            signature='(),()->()'
+        vec_wd_gen=np.vectorize(wd_gen,signature=signature)
+        array=vec_wd_gen(dN,srN)
+        return cls(array)
+
+    def __pos__(self):
+        return self
+
+    def __neg__(self):
+        array=-self.array
+        return self.__class__(array)
+
+    def __abs__(self):
+        array=np.abs(self.array)
+        return self.__class__(array)
+
+    def __rshift__(self, t):
+        array=self.array>>t
+        return self.__class__(array)
+
+    def __lshift__(self, t):
+        array=self.array<<t
+        return self.__class__(array)
+
+    def __or__(self, other):
+        assert isinstance(other,WavedataN)
+        assert self.shape == other.shape
+        array=self.array|other.array
+        return self.__class__(array)
+
+    def __xor__(self, n):
+        n = int(n)
+        if n <= 1:
+            return self
+        else:
+            array=self.array^n
+            return self.__class__(array)
+
+    def __pow__(self, v):
+        array=self.array**v
+        return self.__class__(array)
+
+    def __add__(self, other):
+        if isinstance(other,WavedataN):
+            assert self.shape == other.shape
+            array = self.array + other.array
+            return self.__class__(array)
+        else:
+            return other + self
+
+    def __radd__(self, v):
+        array = self.array + v
+        return self.__class__(array)
+
+    def __sub__(self, other):
+        return self + (- other)
+
+    def __rsub__(self, v):
+        return v + (-self)
+
+    def __mul__(self, other):
+        if isinstance(other,WavedataN):
+            assert self.shape == other.shape
+            array = self.array * other.array
+            return self.__class__(array)
+        else:
+            return other * self
+
+    def __rmul__(self, v):
+        array = self.array * v
+        return self.__class__(array)
+
+    def __truediv__(self, other):
+        if isinstance(other,WavedataN):
+            assert self.shape == other.shape
+            array = self.array / other.array
+            return self.__class__(array)
+        else:
+            return (1/other) * self
+
+    def __rtruediv__(self, v):
+        array = v / self.array
+        return self.__class__(array)
+
+    def plot(self,**kw):
+        array = self.array.flatten()
+        row, = array.shape
+        fig,ax = plt.subplots(row,1,figsize=(10,row),sharex=True)
+        plt.subplots_adjust(hspace=0)
+        for i in range(row):
+            array[i].plot(ax=ax[i])
+        return fig,ax
