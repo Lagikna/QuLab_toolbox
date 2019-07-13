@@ -40,8 +40,8 @@ def Homodyne(wd, freq=50e6, cali=None, **kw):
 
 def Analyze_cali(wd, freq=50e6, **kw):
     '''根据IQ波形计算校正序列,准确性好'''
-    para_I=wd.I().getFFT([0,freq],mode='complex',half=True)
-    para_Q=wd.Q().getFFT([0,freq],mode='complex',half=True)
+    para_I=wd.I().getFFT([0,freq],mode='complex',half=False)
+    para_Q=wd.Q().getFFT([0,freq],mode='complex',half=False)
 
     _offset_I,_offset_Q = para_I[0].real,para_Q[0].real
     amp_I,amp_Q = np.abs(para_I[1]),np.abs(para_Q[1])
