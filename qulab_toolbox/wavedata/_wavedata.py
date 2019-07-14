@@ -8,8 +8,8 @@ class Wavedata(object):
 
     def __init__(self, data = [], sRate = 1):
         '''给定序列和采样率，构造Wavedata'''
-        self.__data = np.array(data)
-        assert self.__data.ndim==1
+        self.__data = np.array(data).flatten()
+        # assert self.__data.ndim==1
         self.__sRate = sRate
 
     @property
@@ -117,33 +117,72 @@ class Wavedata(object):
                             bounds_error=False,fill_value=(0,0))
         return _timeFunc
 
-    def setRange(self,a,b):
-        '''设置波形点数范围，如果a,b超出点数的上下限，则补0'''
-        a = np.around(a).astype(int)
-        b = np.around(b).astype(int)
-        s = self.size
-        assert b > a and a < s and b > 0
-        append_left=np.zeros(-a) if a < 0 else []
-        append_right=np.zeros(b-s) if b > s else []
-        data_cut=self.data[a:b] if a>0 else self.data[0:b]
-        _data = np.append(data_cut, append_right)
-        data = np.append(append_left, _data)
+    def append(self,left=0,right=0):
+        '''在data左右两侧补相应数量的0'''
+        left = np.around(left).astype(int)
+        append_left=np.zeros(left)
+        _data = np.append(append_left, self.data)
+        right = np.around(right).astype(int)
+        append_right=np.zeros(right)
+        data = np.append(_data, append_right)
         wd = self.__class__(data, self.sRate)
         return wd
 
-    def setRangeL(self,la,lb):
-        '''设置波形长度范围，如果la,lb超出长度的上下限，则补0'''
-        a = np.around(la*self.sRate).astype(int)
-        b = np.around(lb*self.sRate).astype(int)
+    def appendLen(self,left=0,right=0):
+        '''在data左右两侧补相应时间长度数量的0'''
+        left = np.around(left*self.sRate).astype(int)
+        right = np.around(right*self.sRate).astype(int)
+        return self.append(left,right)
+
+    def setRange(self,a,b):
+        '''设置波形点数范围，与切片规则一致'''
+        s = self.size
+        a = np.around(a).astype(int)
+        b = np.around(b).astype(int)
+        data=self.data[a:b]
+        wd = self.__class__(data, self.sRate)
+        return wd
+
+    def setRangeLen(self,a,b):
+        '''设置波形长度范围，'''
+        a = np.around(a*self.sRate).astype(int)
+        b = np.around(b*self.sRate).astype(int)
         return self.setRange(a,b)
 
-    def setSize(self,size):
-        '''设置点数，增多补0，减少截取'''
-        return self.setRange(0,size)
+    # def setRange(self,a=0,b=None):
+    #     '''设置波形点数范围，如果a,b超出点数的上下限，则补0；
+    #     a,b与切片规则相似'''
+    #     s = self.size
+    #     a = np.around(a).astype(int)
+    #     b = np.around(b).astype(int) if b is not None else s
+    #     b = b if b >= 0 else s+b
+    #     assert b >= a and a <= s and b >= 0
+    #     append_left=np.zeros(-a) if a < 0 else []
+    #     append_right=np.zeros(b-s) if b > s else []
+    #     data_cut=self.data[a:b] if a>=0 else self.data[0:b]
+    #     _data = np.append(data_cut, append_right)
+    #     data = np.append(append_left, _data)
+    #     wd = self.__class__(data, self.sRate)
+    #     return wd
+    #
+    # def setRangeLen(self,a=0,b=None):
+    #     '''设置波形长度范围，如果la,lb超出长度的上下限，则补0'''
+    #     a = np.around(a*self.sRate).astype(int)
+    #     b = np.around(b*self.sRate).astype(int) if b is not None else self.len
+    #     return self.setRange(a,b)
 
-    def setLen(self,length):
+    def setSize(self,size=None):
+        '''设置点数，增多补0，减少截取'''
+        size=np.around(size).astype(int)
+        if size<=self.size:
+            return self.setRange(0,size)
+        else:
+            return self.append(0,size-self.size)
+
+    def setLen(self,length=None):
         '''设置长度，增大补0，减小截取'''
-        return self.setRangeL(0,length)
+        size = np.around(length*self.sRate).astype(int)
+        return self.setSize(size)
 
     def __len__(self):
         '''len(wd) 返回点数'''
@@ -294,8 +333,9 @@ class Wavedata(object):
         wd = self.__class__(data, self.sRate)
         return wd
 
-    def FFT(self, mode='complex', half=True, **kw): # 支持复数，需做调整
-        '''FFT, 默认波形data为实数序列, 只取一半结果, 为实际物理频谱'''
+    def FFT(self, mode='complex', half=False, **kw): # 支持复数，需做调整
+        '''FFT, 默认形式为直接FFT变换；
+        data为实数序列, 可以只取一半结果, 为实际物理频谱'''
         sRate = self.size/self.sRate
         # 对于实数序列的FFT，正负频率的分量是相同的
         # 对于双边谱，即包含负频率成分的，除以size N 得到实际振幅
@@ -320,7 +360,7 @@ class Wavedata(object):
         wd = self.__class__(data, sRate)
         return wd
 
-    def getFFT(self,freq,mode='complex',half=True,**kw):
+    def getFFT(self,freq,mode='complex',half=False,**kw):
         ''' 获取指定频率的FFT分量；
         freq: 为一个频率值或者频率的列表，
         返回值: 是对应mode的一个值或列表'''
@@ -404,7 +444,7 @@ class Wavedata(object):
             # ax.set_title('Wavedata-IQ')
             line1 = ax.plot(x, np.real(self.data), fmt1, label='real', **kw)
             line2 = ax.plot(x, np.imag(self.data), fmt2, label='imag', **kw)
-            plt.legend(loc = 'best')
+            # plt.legend(loc = 'best')
             return [line1, line2]
         else:
             # ax.set_title('Wavedata')
