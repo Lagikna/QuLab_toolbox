@@ -59,7 +59,7 @@ class WGN(Filter):
 
 
 class baFilter(Filter):
-    """指定signal里包含的滤波器函数名,生成相关的结果为 ba 的数字滤波器."""
+    """指定signal模块里包含的滤波器函数名,生成相关的结果为 ba 的数字滤波器."""
     def __init__(self, name='', **kw):
         # 指定signal里包含的滤波器函数名,传入相关的参数
         kw.update(output='ba',analog=False)
@@ -80,10 +80,17 @@ class baFilter(Filter):
 
     def plot(self):
         '''画出频率响应曲线'''
+        ax=plt.gca()
         w,h=self.freqz()
-        plt.plot(w, np.abs(h))
-        plt.xlabel('Frequency')
-        plt.ylabel('factor')
+        line,=ax.plot(w, np.abs(h),'r-',label='Amplitude')
+        ax.set_xlabel('Frequency')
+        ax.set_ylabel('Amplitude Factor')
+        ax1=plt.twinx()
+        line1,=ax1.plot(w, np.angle(h,deg=True),'b--',label='Phase')
+        ax1.set_ylabel('Phase Factor')
+        # plt.legend([line,line1],['Amplitude','Phase'],loc='best')
+        return [line,line1]
+
 
 class IIRFilter(baFilter):
     '''参考scipy.signal.iirfilter'''

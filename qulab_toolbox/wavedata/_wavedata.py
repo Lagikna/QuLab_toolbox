@@ -442,13 +442,13 @@ class Wavedata(object):
             x = self.x
         if self.isIQ:
             # ax.set_title('Wavedata-IQ')
-            line1 = ax.plot(x, np.real(self.data), fmt1, label='real', **kw)
-            line2 = ax.plot(x, np.imag(self.data), fmt2, label='imag', **kw)
+            line1, = ax.plot(x, np.real(self.data), fmt1, label='real', **kw)
+            line2, = ax.plot(x, np.imag(self.data), fmt2, label='imag', **kw)
             # plt.legend(loc = 'best')
             return [line1, line2]
         else:
             # ax.set_title('Wavedata')
-            line1 = ax.plot(x, self.data, fmt1, **kw)
+            line1, = ax.plot(x, self.data, fmt1, **kw)
             return [line1, ]
 
     def plt(self, mode='psd', r=False, **kw): # 支持复数，需要具体了解

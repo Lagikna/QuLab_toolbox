@@ -8,11 +8,30 @@ from ._wd_func import *
 '''Wavedata 额外的分析模块，传入Wavedata类实例，进行分析'''
 
 
-def Homodyne(wd, freq=50e6, cali=None, **kw):
-    '''把信号按一定频率旋转，得到解调的IQ'''
+def Analyze_cali(wd, freq=50e6, **kw):
+    '''根据IQ波形计算校正序列,准确性好'''
+    para_I=wd.I().getFFT([0,freq],mode='complex',half=False)
+    para_Q=wd.Q().getFFT([0,freq],mode='complex',half=False)
+
+    _offset_I,_offset_Q = para_I[0].real,para_Q[0].real
+    amp_I,amp_Q = np.abs(para_I[1]),np.abs(para_Q[1])
+    phase_I,phase_Q = np.angle(para_I[1],deg=True),np.angle(para_Q[1],deg=True)
+
+    _scale_I, _scale_Q = 1, amp_Q/amp_I
+    phi0 = 90
+    # 相位范围转化为（-180，180）
+    _phase_I, _phase_Q = 0, (phase_Q-phase_I+phi0+540)%360-180
+
+    cali_array = np.array([[_scale_I,_offset_I,_phase_I],
+                           [_scale_Q,_offset_Q,_phase_Q]]
+                          ).round(decimals=3) # 保留3位小数
+    return cali_array
+
+
+def Calibrate(wd, freq=50e6, cali=None, **kw):
+    '''校正波形'''
     if cali is None:
-        res_wd=wd*Exp(-2*np.pi*freq,0,wd.len,wd.sRate)
-        return res_wd
+        _wd = wd
     else:
         _cali = np.array(cali)
         _scale_I, _offset_I = _cali[0,:2]
@@ -35,24 +54,14 @@ def Homodyne(wd, freq=50e6, cali=None, **kw):
         _wd_Q=(_wd_Q-_offset_Q)/_scale_Q
 
         _wd=_wd_I+1j*_wd_Q
-        res_wd=_wd*Exp(-2*np.pi*freq,0,wd.len,wd.sRate)
-        return res_wd
+    return _wd
 
-def Analyze_cali(wd, freq=50e6, **kw):
-    '''根据IQ波形计算校正序列,准确性好'''
-    para_I=wd.I().getFFT([0,freq],mode='complex',half=False)
-    para_Q=wd.Q().getFFT([0,freq],mode='complex',half=False)
 
-    _offset_I,_offset_Q = para_I[0].real,para_Q[0].real
-    amp_I,amp_Q = np.abs(para_I[1]),np.abs(para_Q[1])
-    phase_I,phase_Q = np.angle(para_I[1],deg=True),np.angle(para_Q[1],deg=True)
-
-    _scale_I, _scale_Q = 1, amp_Q/amp_I
-    phi0 = 90
-    # 相位范围转化为（-180，180）
-    _phase_I, _phase_Q = 0, (phase_Q-phase_I+phi0+540)%360-180
-
-    cali_array = np.array([[_scale_I,_offset_I,_phase_I],
-                           [_scale_Q,_offset_Q,_phase_Q]]
-                          ).round(decimals=3) # 保留3位小数
-    return cali_array
+def Homodyne(wd, freq=50e6, cali=None, **kw):
+    '''把信号按一定频率旋转，得到解调的IQ'''
+    if cali is None:
+        _wd = wd
+    else:
+        _wd = Calibrate(wd, freq=freq, cali=cali, **kw)
+    res_wd=_wd*Exp(-2*np.pi*freq,0,wd.len,wd.sRate)
+    return res_wd
