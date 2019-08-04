@@ -1,6 +1,7 @@
 import numpy as np
 from ._wavedata import Wavedata
 import scipy.signal as signal
+from scipy.stats import multivariate_normal
 import matplotlib.pyplot as plt
 
 '''Wavedata 滤波器模块，包含一些数字滤波器'''
@@ -11,8 +12,10 @@ class Filter(object):
         super(Filter, self).__init__()
         if process is not None:
             self.process = process
+        else:
+            self.process = self._process
 
-    def process(self,data,sRate):
+    def _process(self,data,sRate):
         '''Filter处理函数，输入输出都是(data,sRate)格式'''
         return data,sRate
 
@@ -113,3 +116,67 @@ class BesselFilter(baFilter):
         self.dict=dict(N=N, Wn=Wn, btype=btype,
                         analog=False, output='ba', norm=norm, fs=fs)
         self.ba = signal.bessel(**self.dict)
+
+
+def GaussKernal2D(halfsize,a=2,factor=1,xy='X',):
+    '''产生二维高斯卷积核
+
+    Parameters：
+        halfsize: int, 卷积核矩阵的长度为（2 * halfsize + 1）
+        a: float, 高斯分布函数的取值范围与方差的比值
+        factor: float, 二维高斯函数的协方差系数因子
+        xy: ['X','Y'], 控制协方差系数的模式
+
+    Return:
+        m: 二维 np.ndarray, 二维高斯卷积核
+    '''
+    mean=[0,0]
+    if xy=='X':
+        cov=[[1,0],[0,1/factor]]
+    elif xy=='Y':
+        cov=[[1/factor,0],[0,1]]
+    else:
+        cov=[[1,0],[0,1]]
+    rv = multivariate_normal(mean, cov)
+    x0=np.linspace(-a,a,2*halfsize+1)
+    x,y=np.meshgrid(x0,x0)
+    pos = np.dstack((x, y))
+    _m=rv.pdf(pos)
+    m=_m/np.sum(_m)
+    return m
+
+def GaussKernal(halfsize,a=2):
+    '''产生一维高斯卷积核
+
+    Parameters：
+        halfsize: int, 半边长，卷积核矩阵的长度为（2 * halfsize + 1）
+        a: float, 高斯分布函数的取值范围与方差的比值
+
+    Return:
+        m: 一维 np.ndarray, 一维高斯卷积核
+    '''
+    rv = multivariate_normal(0, 1)
+    x0=np.linspace(-a,a,2*halfsize+1)
+    _m=rv.pdf(x0)
+    m=_m/np.sum(_m)
+    return m
+
+class GaussFilter(Filter):
+    '''高斯低通数字滤波器，通过卷积实现'''
+    def __init__(self,halfsize,a=2):
+        self.kernal=GaussKernal(halfsize,a)
+
+    def process(self,data,sRate):
+        _data=np.convolve(data,self.kernal,mode='same')
+        return _data,sRate
+
+    def plot(self,sRate=1e9):
+        ax=plt.gca()
+        wd_gk_FFT = Wavedata(self.kernal,sRate).append(1000,1000).FFT()
+        line1,=wd_gk_FFT.trans('amp').plot(isfft=True,fmt1='r-',label='Amplitude')
+        ax.set_xlabel('Frequency')
+        ax.set_ylabel('Amplitude Factor')
+        # ax1=plt.twinx()
+        # line2,=wd_gk_FFT.trans('phase').plot(isfft=True,fmt1='b--',label='Phase')
+        # ax1.set_ylabel('Phase Factor')
+        return [line1,]
