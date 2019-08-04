@@ -3,13 +3,21 @@ import copy
 import matplotlib.pyplot as plt
 from ._wavedata import Wavedata
 from ._wd_func import *
+from . import _Filter as F
 
 
 '''Wavedata 额外的分析模块，传入Wavedata类实例，进行分析'''
 
 
 def Analyze_cali(wd, freq=50e6, **kw):
-    '''根据IQ波形计算校正序列,准确性好'''
+    '''计算IQ波形的校正序列，准确性很好
+
+    Parameters:
+        wd: 包含IQ信息的Wavedata类
+        freq: 校正的频率标准
+    Return:
+        cali_array: 2*3的序列，包含校正信息
+    '''
     para_I=wd.I().getFFT([0,freq],mode='complex',half=False)
     para_Q=wd.Q().getFFT([0,freq],mode='complex',half=False)
 
@@ -29,7 +37,15 @@ def Analyze_cali(wd, freq=50e6, **kw):
 
 
 def Calibrate(wd, freq=50e6, cali=None, **kw):
-    '''校正波形'''
+    '''校正波形
+
+    Parameters:
+        wd: 包含IQ信息的Wavedata类
+        freq: 校正的频率标准
+        cali: 2*3的序列，包含校正信息，可用Analyze_cali得到
+    Return:
+        _wd: 校正后的wd
+    '''
     if cali is None:
         _wd = wd
     else:
@@ -58,10 +74,51 @@ def Calibrate(wd, freq=50e6, cali=None, **kw):
 
 
 def Homodyne(wd, freq=50e6, cali=None, **kw):
-    '''把信号按一定频率旋转，得到解调的IQ'''
+    '''把信号按一定频率旋转，得到解调的IQ
+
+    Parameters:
+        wd: 待解调Wavedata类
+        freq: 旋转频率，正负表示不同的解调方向
+        cali: 校正矩阵，默认不校正
+    Return:
+        res_wd: 解调后的wd
+    '''
     if cali is None:
         _wd = wd
     else:
         _wd = Calibrate(wd, freq=freq, cali=cali, **kw)
     res_wd=_wd*Exp(-2*np.pi*freq,0,wd.len,wd.sRate)
     return res_wd
+
+
+def filterGenerator(freqlist,bandwidth=2e6，fs=1e9):
+    '''二阶IIRFilter带通滤波器的生成器
+
+    Parameters：
+        freqlist: 滤波频率列表
+        bandwidth: 滤波带宽
+        fs: 数字信号的采样率
+
+    Return：
+        迭代返回各频率滤波器
+    '''
+    for f in freqlist:
+        flt=F.IIRFilter(2, [abs(f)-bandwidth/2, abs(f)+bandwidth/2], 0.01, 100, 'band', ftype='ellip', fs=fs)
+        yield flt
+
+def Demodulation(wd_raw,freqlist):
+    '''解调迭代器
+
+    Parameters：
+        wd_raw: Wavedata类，待解调wd
+        freqlist: 解调频率列表
+
+    Return:
+        迭代返回各频率解调后wd
+    '''
+    gk=F.GaussKernal(5,a=2.5)
+    for f,flt in zip(freqlist,filterGenerator(freqlist)):
+        iqcali = Analyze_cali(wd_raw, f)
+        wd_cali = Calibrate(wd_raw, freq=f, cali=iqcali).filter(flt)
+        wd_f = Homodyne(wd_cali, freq=f, cali=None).convolve(gk)
+        yield wd_f
