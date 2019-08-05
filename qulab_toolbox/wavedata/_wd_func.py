@@ -6,17 +6,46 @@ from ._wavedata import Wavedata
 
 ### 重要的wd函数
 def Sin(w, phi=0, width=0, sRate=1e2):
+    '''正弦波形
+
+    Parameters:
+        w: 角频率
+        phi: 相位，弧度制
+        width: 波形宽度参数
+        sRate: 采样率
+    Return:
+        Wavedata类实例，数据为实数类型
+    '''
     timeFunc = lambda t: np.sin(w*t+phi)
     domain=(0,width)
     return Wavedata.init(timeFunc,domain,sRate)
 
 def Cos(w, phi=0, width=0, sRate=1e2):
+    '''余弦波形
+
+    Parameters:
+        w: 角频率
+        phi: 相位，弧度制
+        width: 波形宽度参数
+        sRate: 采样率
+    Return:
+        Wavedata类实例，数据为实数类型
+    '''
     timeFunc = lambda t: np.cos(w*t+phi)
     domain=(0,width)
     return Wavedata.init(timeFunc,domain,sRate)
 
 def Exp(w, phi=0, width=0, sRate=1e2):
-    '''IQ类型 复数正弦信号'''
+    '''IQ类型 复数正弦信号
+
+    Parameters:
+        w: 角频率
+        phi: 相位，弧度制
+        width: 波形宽度参数
+        sRate: 采样率
+    Return:
+        Wavedata类实例，数据为复数类型
+    '''
     timeFunc = lambda t: np.exp(1j*(w*t+phi))
     domain=(0,width)
     return Wavedata.init(timeFunc,domain,sRate)
@@ -24,38 +53,77 @@ def Exp(w, phi=0, width=0, sRate=1e2):
 
 ### 非IQ类型
 def Blank(width=0, sRate=1e2):
-    '''空波形'''
+    '''空波形
+
+    Parameters:
+        width: 波形宽度参数
+        sRate: 采样率
+    Return:
+        Wavedata类实例
+    '''
     timeFunc = lambda x: 0
     domain=(0, width)
     return Wavedata.init(timeFunc,domain,sRate)
 
 def Noise_wgn(width=0, sRate=1e2):
-    '''产生高斯白噪声序列，注意序列未归一化'''
+    '''产生高斯白噪声序列，注意序列未归一化
+
+    Parameters:
+        width: 波形宽度参数
+        sRate: 采样率
+    Return:
+        Wavedata类实例'''
     size = np.around(width * sRate).astype(int)
     data = np.random.randn(size)
     return Wavedata(data,sRate)
 
 def DC(width=0, sRate=1e2):
-    '''方波'''
+    '''方波
+
+    Parameters:
+        width: 波形宽度参数
+        sRate: 采样率
+    Return:
+        Wavedata类实例
+    '''
     timeFunc = lambda x: 1
     domain=(0, width)
     return Wavedata.init(timeFunc,domain,sRate)
 
 def Triangle(width=1, sRate=1e2):
-    '''三角波'''
+    '''三角波
+
+    Parameters:
+        width: 波形宽度参数
+        sRate: 采样率
+    Return:
+        Wavedata类实例'''
     timeFunc = lambda x: 1-np.abs(2/width*x)
     domain=(-0.5*width,0.5*width)
     return Wavedata.init(timeFunc,domain,sRate)
 
 def Gaussian(width=1, sRate=1e2):
-    '''高斯波形'''
+    '''高斯波形
+
+    Parameters:
+        width: 波形宽度参数
+        sRate: 采样率
+    Return:
+        Wavedata类实例'''
     c = width/(4*np.sqrt(2*np.log(2)))
     timeFunc = lambda x: np.exp(-0.5*(x/c)**2)
     domain=(-0.5*width,0.5*width)
     return Wavedata.init(timeFunc,domain,sRate)
 
 def Gaussian2(width=1,sRate=1e2,a=5):
-    '''修正的高斯波形, a是width和方差的比值'''
+    '''修正的高斯波形
+
+    Parameters:
+        width: 波形宽度参数
+        sRate: 采样率
+        a: 波形宽度width和方差的比值
+    Return:
+        Wavedata类实例'''
     c = width/a # 方差
     # 减去由于截取造成的台阶, 使边缘为0, 并归一化
     y0 = np.exp(-0.5*(width/2/c)**2)
@@ -64,11 +132,26 @@ def Gaussian2(width=1,sRate=1e2,a=5):
     return Wavedata.init(timeFunc,domain,sRate)
 
 def CosPulse(width=1, sRate=1e2):
+    '''余弦包络波形
+
+    Parameters:
+        width: 波形宽度参数
+        sRate: 采样率
+    Return:
+        Wavedata类实例'''
     timeFunc = lambda x: (np.cos(2*np.pi/width*x)+1)/2
     domain=(-0.5*width,0.5*width)
     return Wavedata.init(timeFunc,domain,sRate)
 
 def Sinc(width=1, sRate=1e2, a=1):
+    '''Sinc函数波形
+
+    Parameters:
+        width: 波形宽度参数
+        sRate: 采样率
+        a: Sinc函数系数
+    Return:
+        Wavedata类实例'''
     timeFunc = lambda t: np.sinc(a*t)
     domain=(-0.5*width,0.5*width)
     return Wavedata.init(timeFunc,domain,sRate)
