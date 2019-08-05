@@ -118,7 +118,13 @@ class Wavedata(object):
         return _timeFunc
 
     def append(self,left=0,right=0):
-        '''在data左右两侧补相应数量的0'''
+        '''在data左右两侧补相应数量的0
+
+        Parameters:
+            left: 左侧补零数量
+            right: 右侧补零数量
+        Return:
+            一个新的Wavedata类实例'''
         left = np.around(left).astype(int)
         append_left=np.zeros(left)
         _data = np.append(append_left, self.data)
@@ -129,7 +135,13 @@ class Wavedata(object):
         return wd
 
     def appendLen(self,left=0,right=0):
-        '''在data左右两侧补相应时间长度数量的0'''
+        '''在data左右两侧补相应时间长度数量的0
+
+        Parameters:
+            left: 左侧补零长度
+            right: 右侧补零长度
+        Return:
+            一个新的Wavedata类实例'''
         left = np.around(left*self.sRate).astype(int)
         right = np.around(right*self.sRate).astype(int)
         return self.append(left,right)
@@ -148,28 +160,6 @@ class Wavedata(object):
         a = np.around(a*self.sRate).astype(int)
         b = np.around(b*self.sRate).astype(int)
         return self.setRange(a,b)
-
-    # def setRange(self,a=0,b=None):
-    #     '''设置波形点数范围，如果a,b超出点数的上下限，则补0；
-    #     a,b与切片规则相似'''
-    #     s = self.size
-    #     a = np.around(a).astype(int)
-    #     b = np.around(b).astype(int) if b is not None else s
-    #     b = b if b >= 0 else s+b
-    #     assert b >= a and a <= s and b >= 0
-    #     append_left=np.zeros(-a) if a < 0 else []
-    #     append_right=np.zeros(b-s) if b > s else []
-    #     data_cut=self.data[a:b] if a>=0 else self.data[0:b]
-    #     _data = np.append(data_cut, append_right)
-    #     data = np.append(append_left, _data)
-    #     wd = self.__class__(data, self.sRate)
-    #     return wd
-    #
-    # def setRangeLen(self,a=0,b=None):
-    #     '''设置波形长度范围，如果la,lb超出长度的上下限，则补0'''
-    #     a = np.around(a*self.sRate).astype(int)
-    #     b = np.around(b*self.sRate).astype(int) if b is not None else self.len
-    #     return self.setRange(a,b)
 
     def setSize(self,size=None):
         '''设置点数，增多补0，减少截取'''

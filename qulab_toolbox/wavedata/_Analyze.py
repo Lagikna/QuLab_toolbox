@@ -91,7 +91,7 @@ def Homodyne(wd, freq=50e6, cali=None, **kw):
     return res_wd
 
 
-def filterGenerator(freqlist,bandwidth=2e6，fs=1e9):
+def filterGenerator(freqlist,bandwidth=2e6,fs=1e9):
     '''二阶IIRFilter带通滤波器的生成器
 
     Parameters：
