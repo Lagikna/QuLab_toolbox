@@ -132,9 +132,9 @@ def GaussKernal2D(halfsize,a=2,factor=1,xy='X',):
     '''
     mean=[0,0]
     if xy=='X':
-        cov=[[1,0],[0,1/factor]]
+        cov=[[1,0],[0,factor]]
     elif xy=='Y':
-        cov=[[1/factor,0],[0,1]]
+        cov=[[factor,0],[0,1]]
     else:
         cov=[[1,0],[0,1]]
     rv = multivariate_normal(mean, cov)

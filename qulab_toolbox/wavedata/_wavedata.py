@@ -82,9 +82,11 @@ class Wavedata(object):
         wd = self.__class__(np.imag(self.data), self.sRate)
         return wd
 
-    def trans(self,mode='real'):
+    def trans(self,mode='self'):
         '''对于IQ波形转化成其他几种格式'''
-        if mode in ['amp','abs']: #振幅或绝对值
+        if mode == 'self':
+            data = self.data
+        elif mode in ['amp','abs']: #振幅或绝对值
             data = np.abs(self.data)
         elif mode in ['phase','angle']: #相位或辐角
             data = np.angle(self.data,deg=True)
