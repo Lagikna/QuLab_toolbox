@@ -5,34 +5,38 @@ from scipy.optimize import curve_fit
 
 class BaseFit(object):
     """BaseFit class, based on scipy.optimiz.curve_fit """
-    def __init__(self, data, **kw):
+    def __init__(self, data, fitfunc=None, **kw):
         super(BaseFit, self).__init__()
-        self.data=np.array(data)
-        self._Fitcurve(**kw)
+        x,y=data
+        self.x=np.array(x)
+        self.y=np.array(y)
+        self.fitfunc=self._fitfunc if fitfunc is None else fitfunc
+
+        popt, pcov=curve_fit(self.fitfunc, self.x, self.y, maxfev=100000, **kw)
+        self._popt = popt
+        self._pcov = pcov
+        self._error = np.sqrt(np.diag(pcov))
 
     def _fitfunc(self, t, A, B, T1):
         '''this an example: T1 fit function '''
         y=A*np.exp(-t/T1)+B
         return y
 
-    def _Fitcurve(self, **kw):
-        t,y=self.data
-        popt, pcov=curve_fit(self._fitfunc, t, y, maxfev=100000, **kw)
-        self._popt = popt
-        self._pcov = pcov
-        self._error = np.sqrt(np.diag(pcov))
+    def func(self,t):
+        '''拟合后的函数'''
+        return self.fitfunc(t,*self._popt)
 
     def plot(self, fmt2='k--',
                    kw1={},
                    kw2={}):
         ax = plt.gca()
-        t,y=self.data
+        t,y=self.x,self.y
         scatter_kw={'marker':'o','color':'','edgecolors':'r'}
         scatter_kw.update(kw1)
         ax.scatter(t, y, **scatter_kw)
         plot_kw={}
         plot_kw.update(kw2)
-        ax.plot(t, self._fitfunc(t,*self._popt), fmt2, **plot_kw)
+        ax.plot(t, self.func(t), fmt2, **plot_kw)
 
     @property
     def error(self):
@@ -92,6 +96,7 @@ class Linear_Fit(BaseFit):
 
 
 class Sin_Fit(BaseFit):
+
     def _fitfunc(self, t, A, B, w, phi):
         y=A*np.sin(w*t+phi)+B
         return y
