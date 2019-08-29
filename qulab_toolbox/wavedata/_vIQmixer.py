@@ -82,13 +82,13 @@ class vIQmixer(object):
         return vIQ._RF
 
     @classmethod
-    def carry_wave(cls,carry_freq=0,I=0,Q=0,IQ=None,carry_cali=None,DEG=True):
+    def carry_wave(cls,carry_freq=0,I=0,Q=0,IQ=None,phase=0,carry_cali=None,DEG=True):
         '''将I/Q分别加载某个频率的载波，
         carry_cali对应实体IQ混频器的校准矩阵，与上面cali_array格式相同'''
         if IQ is None:
             IQ=I+1j*Q
         # 理想情况下的载波IQ, 未校准
-        carry_IQ = IQ*Exp(2*np.pi*carry_freq,0,IQ.len,IQ.sRate)
+        carry_IQ = IQ*Exp(2*np.pi*carry_freq,phase,IQ.len,IQ.sRate)
 
         if carry_cali is None:
             return carry_IQ
