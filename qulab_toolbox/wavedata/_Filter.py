@@ -10,10 +10,7 @@ class Filter(object):
     """Filter baseclass, filt nothing."""
     def __init__(self, process=None):
         super(Filter, self).__init__()
-        if process is not None:
-            self.process = process
-        else:
-            self.process = self._process
+        self.process = self._process if process is None else process
 
     def _process(self,data,sRate):
         '''Filter处理函数，输入输出都是(data,sRate)格式'''
