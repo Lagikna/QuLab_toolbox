@@ -150,7 +150,6 @@ class Wavedata(object):
 
     def setRange(self,a,b):
         '''设置波形点数范围，与切片规则一致'''
-        s = self.size
         a = np.around(a).astype(int)
         b = np.around(b).astype(int)
         data=self.data[a:b]
@@ -245,66 +244,82 @@ class Wavedata(object):
         return wd
 
     def __add__(self, other):
-        '''加 wd+o 波形值相加，会根据类型判断'''
+        '''加 wd+o 波形值相加
+
+        other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为'''
         if isinstance(other,Wavedata):
             assert self.sRate == other.sRate
             size = max(self.size, other.size)
-            self.setSize(size)
-            other.setSize(size)
-            data = self.data + other.data
+            data_self = np.append(self.data, np.zeros(size-self.size))
+            data_other = np.append(other.data, np.zeros(size-other.size))
+            data = data_self + data_other
             wd = self.__class__(data, self.sRate)
             return wd
         else:
             return other + self
 
     def __radd__(self, v):
-        '''加 v+wd 波形值加v，会根据类型判断'''
+        '''加 v+wd 波形值加v
+        
+        other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为'''
         data = self.data + v
         wd = self.__class__(data, self.sRate)
         return wd
 
     def __sub__(self, other):
-        '''减 wd-o 波形值相减，会根据类型判断'''
+        '''减 wd-o 波形值相减
+        
+        other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为'''
         return self + (- other)
 
     def __rsub__(self, v):
-        '''减 v-wd 波形值相减，会根据类型判断'''
+        '''减 v-wd 波形值相减
+        
+        other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为'''
         return v + (-self)
 
     def __mul__(self, other):
-        '''乘 wd*o 波形值相乘，会根据类型判断'''
+        '''乘 wd*o 波形值相乘
+        
+        other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为'''
         if isinstance(other,Wavedata):
             assert self.sRate == other.sRate
             size = max(self.size, other.size)
-            self.setSize(size)
-            other.setSize(size)
-            data = self.data * other.data
+            data_self = np.append(self.data, np.zeros(size-self.size))
+            data_other = np.append(other.data, np.zeros(size-other.size))
+            data = data_self * data_other
             wd = self.__class__(data, self.sRate)
             return wd
         else:
             return other * self
 
     def __rmul__(self, v):
-        '''乘 v*wd 波形值相乘，会根据类型判断'''
+        '''乘 v*wd 波形值相乘
+        
+        other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为'''
         data = self.data * v
         wd = self.__class__(data, self.sRate)
         return wd
 
     def __truediv__(self, other):
-        '''除 wd/o 波形值相除，会根据类型判断'''
+        '''除 wd/o 波形值相除
+        
+        other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为'''
         if isinstance(other,Wavedata):
             assert self.sRate == other.sRate
             size = max(self.size, other.size)
-            self.setSize(size)
-            other.setSize(size)
-            data = self.data / other.data
+            data_self = np.append(self.data, np.zeros(size-self.size))
+            data_other = np.append(other.data, np.zeros(size-other.size))
+            data = data_self / data_other
             wd = self.__class__(data, self.sRate)
             return wd
         else:
             return (1/other) * self
 
     def __rtruediv__(self, v):
-        '''除 v/wd 波形值相除，会根据类型判断'''
+        '''除 v/wd 波形值相除
+        
+        other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为'''
         data = v / self.data
         wd = self.__class__(data, self.sRate)
         return wd
