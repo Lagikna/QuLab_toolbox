@@ -50,6 +50,20 @@ def Exp(w, phi=0, width=0, sRate=1e2):
     domain=(0,width)
     return Wavedata.init(timeFunc,domain,sRate)
 
+def DC(width=0, sRate=1e2, phi=0):
+    '''方波，可以设相位参数，默认为0
+
+    Parameters:
+        width: 波形宽度参数
+        sRate: 采样率
+        phi: 相位，弧度单位
+    Return:
+        Wavedata类实例
+    '''
+    timeFunc = lambda x: 1 if phi==0 else np.exp(1j*phi) # 这里确保phi=0时，数据值为实数而不是复数类型
+    domain=(0, width)
+    return Wavedata.init(timeFunc,domain,sRate)
+
 
 ### 非IQ类型
 def Blank(width=0, sRate=1e2):
@@ -76,19 +90,6 @@ def Noise_wgn(width=0, sRate=1e2):
     size = np.around(width * sRate).astype(int)
     data = np.random.randn(size)
     return Wavedata(data,sRate)
-
-def DC(width=0, sRate=1e2):
-    '''方波
-
-    Parameters:
-        width: 波形宽度参数
-        sRate: 采样率
-    Return:
-        Wavedata类实例
-    '''
-    timeFunc = lambda x: 1
-    domain=(0, width)
-    return Wavedata.init(timeFunc,domain,sRate)
 
 def Triangle(width=1, sRate=1e2):
     '''三角波
