@@ -13,7 +13,7 @@ def Analyze_cali(wd, freq=50e6, **kw):
     '''计算IQ波形的校正序列，准确性很好
 
     Parameters:
-        wd: 包含IQ信息的Wavedata类
+        wd: 包含IQ信息的Wavedata类实例
         freq: 校正的频率标准
     Return:
         cali_array: 2*3的序列，包含校正信息
@@ -40,7 +40,7 @@ def Calibrate(wd, freq=50e6, cali=None, **kw):
     '''校正波形
 
     Parameters:
-        wd: 包含IQ信息的Wavedata类
+        wd: 包含IQ信息的Wavedata类实例
         freq: 校正的频率标准
         cali: 2*3的序列，包含校正信息，可用Analyze_cali得到
     Return:
@@ -77,7 +77,7 @@ def Homodyne(wd, freq=50e6, cali=None, **kw):
     '''把信号按一定频率旋转，得到解调的IQ
 
     Parameters:
-        wd: 待解调Wavedata类
+        wd: 待解调Wavedata类实例
         freq: 旋转频率，正负表示不同的解调方向
         cali: 校正矩阵，默认不校正
     Return:
@@ -91,7 +91,7 @@ def Homodyne(wd, freq=50e6, cali=None, **kw):
     return res_wd
 
 
-def filterGenerator(freqlist,bandwidth=2e6,fs=1e9):
+def filterGenerator(freqlist,bandwidth=1e6,fs=1e9):
     '''二阶IIRFilter带通滤波器的生成器
 
     Parameters：
@@ -122,3 +122,36 @@ def Demodulation(wd_raw,freqlist):
         wd_cali = Calibrate(wd_raw, freq=f, cali=iqcali).filter(flt)
         wd_f = Homodyne(wd_cali, freq=f, cali=None).convolve(gk)
         yield wd_f
+
+def dataMask(data,extend=0):
+    '''获取数据的掩模
+
+    Parameters:
+        data: 一维数列或np.ndarray
+        extend: 掩模扩展的点数
+    
+    Return:
+        掩模数据(np.ndarray)，为0或1的二值序列
+    '''
+    data=np.array(data)
+    maskdata=np.where(data==0,0,1)
+    if extend != 0:
+        k=np.ones(int(extend)*2+1)
+        _data=np.convolve(maskdata,k,mode='same')
+        maskdata=np.where(_data==0,0,1)
+    return maskdata
+
+def wdMask(wd,extend_len=0):
+    '''获取Wavedata类实例的掩模
+
+    Parameters:
+        wd: Wavedata类的实例
+        extend_len: 掩模扩展的时间长度，实际扩展点数与wd的采样率有关
+    
+    Return:
+        掩模Wavedata类实例，data为0或1的二值序列
+    '''
+    assert isinstance(wd,Wavedata)
+    extend = np.around(extend_len*wd.sRate).astype(int)
+    maskdata = dataMask(wd.data,extend)
+    return Wavedata(maskdata,wd.sRate)
