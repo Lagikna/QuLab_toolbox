@@ -1,3 +1,5 @@
+'''Wavedata 额外的分析模块，可传入Wavedata类实例，进行分析'''
+
 import numpy as np
 import copy
 import matplotlib.pyplot as plt
@@ -5,9 +7,8 @@ from ._wavedata import Wavedata
 from ._wd_func import *
 from . import _Filter as F
 
-
-'''Wavedata 额外的分析模块，传入Wavedata类实例，进行分析'''
-
+__all__ = ['Analyze_cali', 'Calibrate', 'Homodyne', 'filterGenerator', 'Demodulation', 
+    'dataMask', 'wdMask']
 
 def Analyze_cali(wd, freq=50e6, **kw):
     '''计算IQ波形的校正序列，准确性很好
@@ -106,18 +107,20 @@ def filterGenerator(freqlist,bandwidth=1e6,fs=1e9):
         flt=F.IIRFilter(2, [abs(f)-bandwidth/2, abs(f)+bandwidth/2], 0.01, 100, 'band', ftype='ellip', fs=fs)
         yield flt
 
-def Demodulation(wd_raw,freqlist):
+def Demodulation(wd_raw,freqlist,bandwidth=1e6):
     '''解调迭代器
 
     Parameters：
         wd_raw: Wavedata类，待解调wd
         freqlist: 解调频率列表
+        bandwidth: 解调滤波的带宽
 
     Return:
         迭代返回各频率解调后wd
     '''
     gk=F.GaussKernal(5,a=2.5)
-    for f,flt in zip(freqlist,filterGenerator(freqlist)):
+    fs=wd_raw.sRate
+    for f,flt in zip(freqlist,filterGenerator(freqlist,bandwidth,fs)):
         iqcali = Analyze_cali(wd_raw, f)
         wd_cali = Calibrate(wd_raw, freq=f, cali=iqcali).filter(flt)
         wd_f = Homodyne(wd_cali, freq=f, cali=None).convolve(gk)
@@ -128,7 +131,7 @@ def dataMask(data,extend=0):
 
     Parameters:
         data: 一维数列或np.ndarray
-        extend: 掩模扩展的点数
+        extend: 掩模扩展的点数(一侧)
     
     Return:
         掩模数据(np.ndarray)，为0或1的二值序列
@@ -146,7 +149,7 @@ def wdMask(wd,extend_len=0):
 
     Parameters:
         wd: Wavedata类的实例
-        extend_len: 掩模扩展的时间长度，实际扩展点数与wd的采样率有关
+        extend_len: 掩模扩展的时间长度(一侧)，实际扩展点数与wd的采样率有关
     
     Return:
         掩模Wavedata类实例，data为0或1的二值序列
