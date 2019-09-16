@@ -1,8 +1,10 @@
+'''Wavedata 虚拟IQ混频器模块'''
+
 import numpy as np
 from ._wavedata import Wavedata
 from ._wd_func import Exp,Sin,Cos
 
-'''Wavedata 虚拟IQ混频器模块'''
+__all__ = ['vIQmixer']
 
 class vIQmixer(object):
     '''virtual IQ mixer'''

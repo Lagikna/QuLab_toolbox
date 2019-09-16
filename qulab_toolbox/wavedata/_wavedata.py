@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from scipy import interpolate
 from scipy.fftpack import fft,ifft
 
+__all__ = ['Wavedata', 'WavedataN']
 
 class Wavedata(object):
 

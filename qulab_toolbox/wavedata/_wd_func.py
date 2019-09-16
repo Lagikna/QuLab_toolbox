@@ -1,8 +1,11 @@
 import numpy as np
 from scipy import interpolate
 from scipy.signal import chirp,sweep_poly
-# import matplotlib.pyplot as plt
 from ._wavedata import Wavedata
+
+__all__ = ['Sin', 'Cos', 'Exp', 'DC',
+    'Blank', 'Noise_wgn', 'Triangle', 'Gaussian', 'Gaussian2', 'CosPulse', 
+    'Sinc', 'Interpolation', 'Chirp', 'Sweep_poly', 'DRAGpulse', 'DRAG_wd',]
 
 ### 重要的wd函数
 def Sin(w, phi=0, width=0, sRate=1e2):
