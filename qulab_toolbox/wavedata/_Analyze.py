@@ -131,7 +131,7 @@ def dataMask(data,extend=0):
 
     Parameters:
         data: 一维数列或np.ndarray
-        extend: 掩模扩展的点数(一侧)
+        extend: 掩模扩展的点数(一侧)，正数向外扩展，负数向内收缩
     
     Return:
         掩模数据(np.ndarray)，为0或1的二值序列
@@ -139,9 +139,15 @@ def dataMask(data,extend=0):
     data=np.array(data)
     maskdata=np.where(data==0,0,1)
     if extend != 0:
-        k=np.ones(int(extend)*2+1)
+        size=int(abs(extend))*2+1
+        k=np.ones(size)/size
         _data=np.convolve(maskdata,k,mode='same')
-        maskdata=np.where(_data==0,0,1)
+        if extend>0:
+            maskdata=np.where(_data==0,0,1)
+        elif extend<0:  
+            # 由于计算精度限制，部分卷积结果不会严格等于1，误差在1e-15量级，所以加了阈值1e-9，
+            # 在extend数值小于1e9时，掩膜都是精确的
+            maskdata=np.where(np.abs(1-_data)<1e-9,1,0) 
     return maskdata
 
 def wdMask(wd,extend_len=0):
@@ -149,7 +155,7 @@ def wdMask(wd,extend_len=0):
 
     Parameters:
         wd: Wavedata类的实例
-        extend_len: 掩模扩展的时间长度(一侧)，实际扩展点数与wd的采样率有关
+        extend_len: 掩模扩展的时间长度(一侧)，实际扩展点数与wd的采样率有关，正数向外扩展，负数向内收缩
     
     Return:
         掩模Wavedata类实例，data为0或1的二值序列
