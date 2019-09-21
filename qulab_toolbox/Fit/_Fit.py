@@ -2,6 +2,32 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
+__CONFIG={
+    'scatter':{
+        'marker':'s',
+        'color':'k',
+        'edgecolors':'',
+        's':10,
+    }
+    'plot':{
+
+    }
+}
+
+def config(mode='scatter',opt={},scatter={},plot={},**kw):
+    scatter_dict={}
+    plot_dict={}
+    if mode=='scatter':
+        scatter_dict.update(opt)
+        scatter_dict.update(kw)
+    elif mode=='plot':
+        plot_dict.update(opt)
+        plot_dict.update(kw)
+    scatter_dict.update(scatter)
+    plot_dict.update(plot)
+    __CONFIG['scatter'].update(scatter_dict)
+    __CONFIG['plot'].update(plot_dict)
+
 
 class BaseFit(object):
     """BaseFit class, based on scipy.optimiz.curve_fit """
@@ -26,16 +52,13 @@ class BaseFit(object):
         '''拟合后的函数'''
         return self.fitfunc(t,*self._popt)
 
-    def plot(self, fmt2='k--',
-                   kw1={},
-                   kw2={}):
+    def plot(self, fmt='r-'):
+        '''fmt: plot curve format'''
         ax = plt.gca()
         t,y=self.x,self.y
-        scatter_kw={'marker':'o','color':'','edgecolors':'r'}
-        scatter_kw.update(kw1)
+        scatter_kw=__CONFIG['scatter']
         ax.scatter(t, y, **scatter_kw)
-        plot_kw={}
-        plot_kw.update(kw2)
+        plot_kw=__CONFIG['plot']
         ax.plot(t, self.func(t), fmt2, **plot_kw)
 
     @property
