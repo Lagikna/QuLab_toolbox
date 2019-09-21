@@ -2,31 +2,26 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 
-__CONFIG={
+_CONFIG={
     'scatter':{
-        'marker':'s',
-        'color':'k',
+        'marker':'p',
+        'color':'g',
         'edgecolors':'',
-        's':10,
-    }
+        's':15,
+    },
     'plot':{
 
     }
 }
 
-def config(mode='scatter',opt={},scatter={},plot={},**kw):
-    scatter_dict={}
-    plot_dict={}
-    if mode=='scatter':
-        scatter_dict.update(opt)
-        scatter_dict.update(kw)
-    elif mode=='plot':
-        plot_dict.update(opt)
-        plot_dict.update(kw)
-    scatter_dict.update(scatter)
-    plot_dict.update(plot)
-    __CONFIG['scatter'].update(scatter_dict)
-    __CONFIG['plot'].update(plot_dict)
+def config(scatter={},plot={}):
+    '''设置BaseFit默认的画图格式
+    
+    Parameters:
+        scatter: 散点图的设置字典
+        plot: 折线图的设置字典'''
+    _CONFIG['scatter'].update(scatter)
+    _CONFIG['plot'].update(plot)
 
 
 class BaseFit(object):
@@ -56,10 +51,10 @@ class BaseFit(object):
         '''fmt: plot curve format'''
         ax = plt.gca()
         t,y=self.x,self.y
-        scatter_kw=__CONFIG['scatter']
+        scatter_kw=_CONFIG['scatter']
         ax.scatter(t, y, **scatter_kw)
-        plot_kw=__CONFIG['plot']
-        ax.plot(t, self.func(t), fmt2, **plot_kw)
+        plot_kw=_CONFIG['plot']
+        ax.plot(t, self.func(t), fmt, **plot_kw)
 
     @property
     def error(self):
