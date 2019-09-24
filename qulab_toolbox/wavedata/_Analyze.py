@@ -146,21 +146,22 @@ def dataMask(data,extend=0):
             maskdata=np.where(_data==0,0,1)
         elif extend<0:  
             # 由于计算精度限制，部分卷积结果不会严格等于1，误差在1e-15量级，所以加了阈值1e-9，
-            # 在extend数值小于1e9时，掩膜都是精确的
+            # 在extend点数小于1e9时，掩膜是完全精确的
             maskdata=np.where(np.abs(1-_data)<1e-9,1,0) 
     return maskdata
 
-def wdMask(wd,extend_len=0):
+def wdMask(wd,extend_len=0,extend_point=None):
     '''获取Wavedata类实例的掩模
 
     Parameters:
         wd: Wavedata类的实例
         extend_len: 掩模扩展的时间长度(一侧)，实际扩展点数与wd的采样率有关，正数向外扩展，负数向内收缩
+        extend_point: 掩模扩展的点数(一侧)，如果设置数值，将优先于extend_len生效
     
     Return:
         掩模Wavedata类实例，data为0或1的二值序列
     '''
     assert isinstance(wd,Wavedata)
-    extend = np.around(extend_len*wd.sRate).astype(int)
+    extend = np.around(extend_len*wd.sRate).astype(int) if extend_point is None else int(extend_point)
     maskdata = dataMask(wd.data,extend)
     return Wavedata(maskdata,wd.sRate)
