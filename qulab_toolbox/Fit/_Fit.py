@@ -19,9 +19,13 @@ def config(scatter={},plot={}):
     
     Parameters:
         scatter: 散点图的设置字典
-        plot: 折线图的设置字典'''
+        plot: 折线图的设置字典
+    '''
     _CONFIG['scatter'].update(scatter)
     _CONFIG['plot'].update(plot)
+
+def getconfig():
+    return _CONFIG
 
 
 class BaseFit(object):
