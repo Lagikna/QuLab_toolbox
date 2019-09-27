@@ -102,7 +102,7 @@ def Triangle(width=1, sRate=1e2):
         sRate: 采样率
     Return:
         Wavedata类实例'''
-    timeFunc = lambda x: 1-np.abs(2/width*x)
+    timeFunc = lambda x: 0 if width==0 else 1-np.abs(2/width*x)
     domain=(-0.5*width,0.5*width)
     return Wavedata.init(timeFunc,domain,sRate)
 
@@ -143,7 +143,7 @@ def CosPulse(width=1, sRate=1e2):
         sRate: 采样率
     Return:
         Wavedata类实例'''
-    timeFunc = lambda x: (np.cos(2*np.pi/width*x)+1)/2
+    timeFunc = lambda x: 0 if width==0 else (np.cos(2*np.pi/width*x)+1)/2
     domain=(-0.5*width,0.5*width)
     return Wavedata.init(timeFunc,domain,sRate)
 
