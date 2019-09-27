@@ -7,19 +7,20 @@ import matplotlib.pyplot as plt
 '''Wavedata 滤波器模块，包含一些数字滤波器'''
 
 class Filter(object):
-    """Filter baseclass, filt nothing."""
+    """滤波器基类，默认不处理波形，可传入一个处理函数产生相应的滤波器实例"""
     def __init__(self, process=None):
-        super(Filter, self).__init__()
-        self.process = self._process if process is None else process
+        self._process = process
 
-    def _process(self,data,sRate):
+    def process(self,data,sRate):
         '''Filter处理函数，输入输出都是(data,sRate)格式'''
+        if self._process is not None:
+            data,sRate = self._process(data,sRate)
         return data,sRate
 
-    def filt(self,w):
-        '''传入Wavedata，返回滤波后的Waveda'''
-        assert isinstance(w,Wavedata)
-        data,sRate = self.process(w.data,w.sRate)
+    def filt(self,wd):
+        '''传入Wavedata实例，返回滤波后的Waveda'''
+        assert isinstance(wd,Wavedata)
+        data,sRate = self.process(wd.data,wd.sRate)
         return Wavedata(data,sRate)
 
 
@@ -177,3 +178,32 @@ class GaussFilter(Filter):
         # line2,=wd_gk_FFT.trans('phase').plot(isfft=True,fmt1='b--',label='Phase')
         # ax1.set_ylabel('Phase Factor')
         return [line1,]
+
+def removeDC(data,sRate):
+    '''去除直流成分，可以近似为扣除平均值'''
+    _data=np.array(data)-np.mean(data)
+    return _data,sRate
+
+# 滤波器实例，可直接使用
+DCBlock=Filter(removeDC)
+
+def bandpass(center=None,span=None,start=None,stop=None,fs=1e9):
+    '''生成IIRFilter的一个带通滤波器实例'''
+    if start is not None and stop is not None:
+        start,stop=start,stop
+    elif center is not None and span is not None:
+        start,stop=abs(center)-span/2, abs(center)+span/2
+    else:
+        raise('Band Frequency Setting Error!')
+    flt=IIRFilter(2, [start,stop], 0.01, 100, 'band', ftype='ellip', fs=fs)
+    return flt
+
+def lowpass(freq,fs=1e9):
+    '''生成IIRFilter的一个低通滤波器实例'''
+    flt=IIRFilter(2, abs(freq), 0.01, 100, 'low', ftype='ellip', fs=fs)
+    return flt
+
+def highpass(freq,fs=1e9):
+    '''生成IIRFilter的一个高通滤波器实例'''
+    flt=IIRFilter(2, abs(freq), 0.01, 100, 'high', ftype='ellip', fs=fs)
+    return flt
