@@ -90,6 +90,7 @@ class vIQmixer(object):
         if IQ is None:
             IQ=I+1j*Q
         # 理想情况下的载波IQ, 未校准
+        phase = phase*np.pi/180 if DEG else phase
         carry_IQ = IQ*Exp(2*np.pi*carry_freq,phase,IQ.len,IQ.sRate)
 
         if carry_cali is None:
