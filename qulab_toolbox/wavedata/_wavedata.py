@@ -163,18 +163,35 @@ class Wavedata(object):
         b = np.around(b*self.sRate).astype(int)
         return self.setRange(a,b)
 
-    def setSize(self,size=None):
-        '''设置点数，增多补0，减少截取'''
-        size=np.around(size).astype(int)
-        if size<=self.size:
-            return self.setRange(0,size)
-        else:
-            return self.append(0,size-self.size)
+    def setSize(self,size,direction=1):
+        '''设置点数，增多补0，减少截取
 
-    def setLen(self,length=None):
-        '''设置长度，增大补0，减小截取'''
+        Parameters:
+            size: 设置的点数
+            direction: 方向，非负数值(默认1)表示沿正方向设置，负数值表示负方向
+        '''
+        size=np.around(size).astype(int)
+        assert size>=0
+        if size<=self.size:
+            if direction>=0:
+                return self.setRange(0,size)
+            else:
+                return self.setRange(self.size-size,self.size)
+        else:
+            if direction>=0:
+                return self.append(0,size-self.size)
+            else:
+                return self.append(size-self.size,0)
+
+    def setLen(self,length,direction=1):
+        '''设置长度，增大补0，减小截取
+        
+        Parameters:
+            length: 设置的长度
+            direction: 方向，非负数值(默认1)表示沿正方向设置，负数值表示负方向
+        '''
         size = np.around(length*self.sRate).astype(int)
-        return self.setSize(size)
+        return self.setSize(size,direction=direction)
 
     def __len__(self):
         '''len(wd) 返回点数'''
@@ -229,14 +246,14 @@ class Wavedata(object):
         return wd
 
     def __xor__(self, n):
-        '''异或 wd^n 串联n个波形'''
-        n = int(n)
-        if n <= 1:
-            return self
+        '''异或 wd^n 串联n个波形，n<=0时输出空波形'''
+        n = np.around(n).astype(int)
+        if n <= 0:
+            data=[]
         else:
             data = list(self.data)*n
-            wd = self.__class__(data, self.sRate)
-            return wd
+        wd = self.__class__(data, self.sRate)
+        return wd
 
     def __pow__(self, v):
         '''幂 wd**v 波形值的v次幂'''
@@ -516,7 +533,7 @@ class WavedataN(object):
         return self
 
     def __neg__(self):
-        array=-self.array
+        array = -self.array
         return self.__class__(array)
 
     def __abs__(self):
@@ -538,7 +555,7 @@ class WavedataN(object):
         return self.__class__(array)
 
     def __xor__(self, n):
-        n = int(n)
+        n = np.around(n).astype(int)
         if n <= 1:
             return self
         else:
