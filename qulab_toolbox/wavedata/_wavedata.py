@@ -163,35 +163,33 @@ class Wavedata(object):
         b = np.around(b*self.sRate).astype(int)
         return self.setRange(a,b)
 
-    def setSize(self,size,direction=1):
-        '''设置点数，增多补0，减少截取
+    def setSize(self,size):
+        '''绝对值表示设置点数，增多补0，减少截取，正负号表示设置方向
 
         Parameters:
-            size: 设置的点数
-            direction: 方向，非负数值(默认1)表示沿正方向设置，负数值表示负方向
+            size: 大小表示设置的点数，正负号表示方向，即负数表示从末尾开始，沿负方向计算点数
         '''
-        size=np.around(size).astype(int)
-        assert size>=0
+        pos_dirction=True if size>=0 else False
+        size=np.around(np.abs(size)).astype(int)
         if size<=self.size:
-            if direction>=0:
+            if pos_dirction:
                 return self.setRange(0,size)
             else:
                 return self.setRange(self.size-size,self.size)
         else:
-            if direction>=0:
+            if pos_dirction:
                 return self.append(0,size-self.size)
             else:
                 return self.append(size-self.size,0)
 
-    def setLen(self,length,direction=1):
-        '''设置长度，增大补0，减小截取
+    def setLen(self,length):
+        '''绝对值表示设置长度，增大补0，减小截取，正负号表示设置方向
         
         Parameters:
-            length: 设置的长度
-            direction: 方向，非负数值(默认1)表示沿正方向设置，负数值表示负方向
+            length: 设置的长度，正负号表示设置方向
         '''
         size = np.around(length*self.sRate).astype(int)
-        return self.setSize(size,direction=direction)
+        return self.setSize(size)
 
     def __len__(self):
         '''len(wd) 返回点数'''
