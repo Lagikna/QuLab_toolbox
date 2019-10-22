@@ -23,3 +23,24 @@ class d2c(object):
             _v=v.todict() if isinstance(v,d2c) else v
             d.update({k:_v})
         return d
+
+    def get(self,keystr,splitsymbol='.'):
+        '''根据关键词连接的字符串，获取对应的值
+        
+        调用一万次耗时 60~80 ms (2-4层字典)'''
+        keys=keystr.split(splitsymbol)
+        d=self.todict()
+        for k in keys:
+            d=d.get(k)
+        return d
+
+    def set(self,keystr,value,splitsymbol='.'):
+        '''根据关键词连接的字符串，设置对应的值
+        
+        调用一万次耗时 110~160 ms (2-4层字典)'''
+        keys=keystr.split(splitsymbol)
+        for k in reversed(keys):
+            value={k:value}
+        d=self.todict()
+        d.update(value)
+        return d2c(d)
