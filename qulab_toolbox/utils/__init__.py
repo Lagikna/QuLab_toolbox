@@ -27,20 +27,30 @@ class d2c(object):
     def get(self,keystr,splitsymbol='.'):
         '''根据关键词连接的字符串，获取对应的值
         
-        调用一万次耗时 60~80 ms (2-4层字典)'''
+        Parameters:
+            keystr: 使用符号串联key的字符串，比如'pulse.width.value'
+            splitsymbol: 字符串的分割符号，默认为 '.'
+        Return:
+            返回键值串对应的值
+        
+        Note: 调用十万次耗时 ~90 ms (2-4层小型字典)'''
         keys=keystr.split(splitsymbol)
-        d=self.todict()
+        value=self
         for k in keys:
-            d=d.get(k)
-        return d
+            value=getattr(value,k)
+        return value
 
     def set(self,keystr,value,splitsymbol='.'):
         '''根据关键词连接的字符串，设置对应的值
         
-        调用一万次耗时 110~160 ms (2-4层字典)'''
+        Parameters:
+            keystr: 使用符号串联key的字符串，比如'pulse.width.value'
+            value: 待设入的值
+            splitsymbol: 字符串的分割符号，默认为 '.'
+
+        Note: 调用十万次耗时 ~100 ms (2-4层小型字典)'''
         keys=keystr.split(splitsymbol)
-        for k in reversed(keys):
-            value={k:value}
-        d=self.todict()
-        d.update(value)
-        return d2c(d)
+        ins=self
+        for k in keys[:-1]:
+            ins=getattr(ins,k)
+        setattr(ins,keys[-1],value)
