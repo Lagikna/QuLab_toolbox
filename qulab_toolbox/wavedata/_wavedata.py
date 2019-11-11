@@ -261,8 +261,9 @@ class Wavedata(object):
 
     def __add__(self, other):
         '''加 wd+o 波形值相加
-
-        other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为'''
+        Parameters:
+            other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为
+        '''
         if isinstance(other,Wavedata):
             assert self.sRate == other.sRate
             size = max(self.size, other.size)
@@ -276,28 +277,32 @@ class Wavedata(object):
 
     def __radd__(self, v):
         '''加 v+wd 波形值加v
-        
-        other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为'''
+        Parameters:
+            other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为
+        '''
         data = self.data + v
         wd = self.__class__(data, self.sRate)
         return wd
 
     def __sub__(self, other):
         '''减 wd-o 波形值相减
-        
-        other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为'''
+        Parameters:
+            other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为
+        '''
         return self + (- other)
 
     def __rsub__(self, v):
         '''减 v-wd 波形值相减
-        
-        other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为'''
+        Parameters:
+            other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为
+        '''
         return v + (-self)
 
     def __mul__(self, other):
         '''乘 wd*o 波形值相乘
-        
-        other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为'''
+        Parameters:
+            other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为
+        '''
         if isinstance(other,Wavedata):
             assert self.sRate == other.sRate
             size = max(self.size, other.size)
@@ -311,16 +316,18 @@ class Wavedata(object):
 
     def __rmul__(self, v):
         '''乘 v*wd 波形值相乘
-        
-        other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为'''
+        Parameters:
+            other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为
+        '''
         data = self.data * v
         wd = self.__class__(data, self.sRate)
         return wd
 
     def __truediv__(self, other):
         '''除 wd/o 波形值相除
-        
-        other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为'''
+        Parameters:
+            other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为
+        '''
         if isinstance(other,Wavedata):
             assert self.sRate == other.sRate
             size = max(self.size, other.size)
@@ -334,15 +341,18 @@ class Wavedata(object):
 
     def __rtruediv__(self, v):
         '''除 v/wd 波形值相除
-        
-        other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为'''
+        Parameters:
+            other/v: 可以为Wavedata类或者数值；如果为np.ndarray，则会造成另一种行为
+        '''
         data = v / self.data
         wd = self.__class__(data, self.sRate)
         return wd
 
     def convolve(self, other, mode='same', norm=True):
         '''卷积
-        mode: full, same, valid'''
+        Parameters:
+            mode: full, same, valid
+        '''
         if isinstance(other,Wavedata):
             _kernal = other.data
         elif isinstance(other,(np.ndarray,list)):

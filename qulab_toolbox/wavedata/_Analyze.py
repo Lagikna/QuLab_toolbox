@@ -165,3 +165,17 @@ def wdMask(wd,extend_len=0,extend_point=None):
     extend = np.around(extend_len*wd.sRate).astype(int) if extend_point is None else int(extend_point)
     maskdata = dataMask(wd.data,extend)
     return Wavedata(maskdata,wd.sRate)
+
+def wdDRAG(wd, a=1e-9):
+    '''生成Wavedata类实例的DRAG波形
+
+    Parameters:
+        wd: Wavedata类的实例
+        a: DRAG系数
+    
+    Return:
+        DRAG处理后的Wavedata类实例
+    '''
+    assert isinstance(wd, Wavedata)
+    wd_res = wd + 1j*a*wd.derivative()
+    return wd_res

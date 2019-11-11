@@ -63,7 +63,8 @@ def DC(width=0, sRate=1e2, phi=0):
     Return:
         Wavedata类实例
     '''
-    timeFunc = lambda x: 1 if phi==0 else np.exp(1j*phi) # 这里确保phi=0时，数据值为实数而不是复数类型
+    # 这里确保phi=0时，数据值为实数而不是复数类型
+    timeFunc = lambda x: 1 if phi==0 else np.exp(1j*phi)
     domain=(0, width)
     return Wavedata.init(timeFunc,domain,sRate)
 
