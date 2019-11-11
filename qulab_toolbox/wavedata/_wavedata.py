@@ -488,7 +488,7 @@ class Wavedata(object):
         '''调用pyplot里与频谱相关的函数画图
         mode 可以为 psd,specgram,magnitude_spectrum,angle_spectrum,
         phase_spectrum等5个(cohere,csd需要两列数据，这里不支持)'''
-        ax = plt.gca()
+        _ = plt.gca()
         plt_func = getattr(plt,mode)
         res = plt_func(x=self.data,Fs=self.sRate,**kw)
         if r:
@@ -564,11 +564,8 @@ class WavedataN(object):
 
     def __xor__(self, n):
         n = np.around(n).astype(int)
-        if n <= 1:
-            return self
-        else:
-            array=self.array^n
-            return self.__class__(array)
+        array=self.array^n
+        return self.__class__(array)
 
     def __pow__(self, v):
         array=self.array**v

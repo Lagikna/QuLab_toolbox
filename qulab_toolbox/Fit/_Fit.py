@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
+from scipy import interpolate
 
 _CONFIG={
     'scatter':{
@@ -51,14 +52,24 @@ class BaseFit(object):
         '''拟合后的函数'''
         return self.fitfunc(t,*self._popt)
 
-    def plot(self, fmt='r-'):
-        '''fmt: plot curve format'''
+    def plot(self, fmt='r-', show='both', times=10):
+        '''画图
+        
+        Parameters:
+            fmt: plot curve format
+            show: both/plot/scatter, 根据选择画图
+            times: 插值的倍率(整数)，重新对x轴数据插值使画出的拟合曲线更平滑'''
         ax = plt.gca()
         t,y=self.x,self.y
-        scatter_kw=_CONFIG['scatter']
-        ax.scatter(t, y, **scatter_kw)
-        plot_kw=_CONFIG['plot']
-        ax.plot(t, self.func(t), fmt, **plot_kw)
+        if show in ['both','scatter']:
+            scatter_kw=_CONFIG['scatter']
+            ax.scatter(t, y, **scatter_kw)
+        if show in ['both','plot']:
+            plot_kw=_CONFIG['plot']
+            size=len(t)
+            t_func=interpolate.interp1d(np.array(range(size))*times,t,kind='linear')
+            _t=t_func(np.array(range((size-1)*times+1)))
+            ax.plot(_t, self.func(_t), fmt, **plot_kw)
 
     @property
     def error(self):
@@ -242,21 +253,3 @@ class Ramsey_Fit(BaseFit):
     def detuning(self):
         A,B,C,Tphi,w = self._popt
         return w/2/np.pi
-
-
-class Spinecho_Fit(BaseFit):
-    '''Fit spinecho'''
-
-    def _fitfunc(self,t,A,B,T2E):
-        y=A*np.exp(-t/T2E)+B
-        return y
-
-    @property
-    def T2E(self):
-        A,B,T2E = self._popt
-        return T2E
-
-    @property
-    def T2E_error(self):
-        A_e,B_e,T2E_e=self._error
-        return T2E_e
