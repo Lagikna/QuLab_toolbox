@@ -52,14 +52,19 @@ class BaseFit(object):
         '''拟合后的函数'''
         return self.fitfunc(t,*self._popt)
 
+    def plotscript(self,ax=None):
+        pass
+
     def plot(self, fmt='r-', show='both', times=10):
         '''画图
         
         Parameters:
             fmt: plot curve format
             show: both/plot/scatter, 根据选择画图
-            times: 插值的倍率(整数)，重新对x轴数据插值使画出的拟合曲线更平滑'''
+            times: 插值的倍率(整数)，重新对x轴数据插值使画出的拟合曲线更平滑
+        '''
         ax = plt.gca()
+        self.plotscript(ax=ax)
         t,y=self.x,self.y
         if show in ['both','scatter']:
             scatter_kw=_CONFIG['scatter']
@@ -190,6 +195,13 @@ class T1_Fit(BaseFit):
         A_e,B_e,T1_e=self._error
         return T1_e
 
+    def plotscript(self,ax=None):
+        ax = plt.gca() if ax is None else ax
+        ax.set_xlabel(r'Time ($\mu$s)')
+        ax.set_ylabel('Population')
+        ax.set_title('Energy Relation')
+        plt.text(0.95, 0.95, r'$T_1 = %.1f^{%.2f}_{%.2f} \mu$s'%(self.T1,self.T1_error,self.T1_error), 
+                horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
 
 class Rabi_Fit(BaseFit):
     '''Fit rabi'''
@@ -227,6 +239,13 @@ class Rabi_Fit(BaseFit):
         _PPlen=np.abs(lmda/2)
         return _PPlen
 
+    def plotscript(self,ax=None):
+        ax = plt.gca() if ax is None else ax
+        ax.set_xlabel(r'Time ($\mu$s)')
+        ax.set_ylabel('Population')
+        ax.set_title('Rabi')
+        plt.text(0.95, 0.95, r'$T_r = %.1f \mu$s'%(self.Tr), 
+                horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
 
 class Ramsey_Fit(BaseFit):
     '''Fit Ramsey'''
@@ -253,3 +272,12 @@ class Ramsey_Fit(BaseFit):
     def detuning(self):
         A,B,C,Tphi,w = self._popt
         return w/2/np.pi
+
+    def plotscript(self,ax=None):
+        ax = plt.gca() if ax is None else ax
+        ax.set_xlabel(r'Time ($\mu$s)')
+        ax.set_ylabel('Population')
+        ax.set_title('Ramsey')
+        plt.text(0.95, 0.95, '$T_{\phi} = %.1f^{%.2f}_{%.2f} \mu$s\n$\Delta = %.4f$ MHz'%(
+                            self.Tphi,self.Tphi_error,self.Tphi_error,self.detuning), 
+                horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
