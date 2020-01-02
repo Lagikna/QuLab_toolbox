@@ -24,36 +24,63 @@ class d2c(object):
             d.update({k:_v})
         return d
 
-    def get(self,keystr,splitsymbol='.'):
-        '''根据关键词连接的字符串，获取对应的值
+    def get(self,keys,splitsymbol='.'):
+        '''根据关键词连接的字符串或者列表，获取对应的值
         
         Parameters:
-            keystr: 使用符号串联key的字符串，比如'pulse.width.value'
+            keys: 使用符号串联key的字符串，比如'pulse.width.value';
+                或者key顺序列表，比如['pulse','width','value']
             splitsymbol: 字符串的分割符号，默认为 '.'
         Return:
             返回键值串对应的值
-        
-        Note: 调用十万次耗时 ~90 ms (2-4层小型字典)'''
-        keys=keystr.split(splitsymbol)
-        value=self
-        for k in keys:
-            value=getattr(value,k)
+        '''
+        keys=keys.split(splitsymbol) if isinstance(keys,str) else keys
+        # value=self
+        # for k in keys:
+        #     value=getattr(value,k)
+        ##
+        value=getattr(self,keys.pop(0))
+        if keys:
+            value=value.get(keys) #递归
         return value
 
-    def set(self,keystr,value,splitsymbol='.'):
-        '''根据关键词连接的字符串，设置对应的值
+    def set(self,keys,value,splitsymbol='.'):
+        '''根据关键词连接的字符串或者列表，设置对应的值
         
         Parameters:
-            keystr: 使用符号串联key的字符串，比如'pulse.width.value'
+            keys: 使用符号串联key的字符串，比如'pulse.width.value';
+                或者key顺序列表，比如['pulse','width','value']
             value: 待设入的值
             splitsymbol: 字符串的分割符号，默认为 '.'
+        '''
+        keys=keys.split(splitsymbol) if isinstance(keys,str) else keys
+        # ins=self
+        # for k in keys[:-1]:
+        #     ins=getattr(ins,k)
+        # setattr(ins,keys[-1],value)
+        ## 
+        if len(keys)>1:
+            getattr(self,keys.pop(0)).set(keys,value) ##递归
+        else:
+            setattr(self,keys[0],value)
 
-        Note: 调用十万次耗时 ~100 ms (2-4层小型字典)'''
-        keys=keystr.split(splitsymbol)
-        ins=self
-        for k in keys[:-1]:
-            ins=getattr(ins,k)
-        setattr(ins,keys[-1],value)
+def flatten_dict(d,symbol='.'):
+    '''将多层字典压平为一层
+    Parameters:
+        d: 待压平的字典
+        symbol: 压平所用的连接符号
+    Return:
+        压平后的字典
+    '''
+    fd={}
+    for k,v in d.items():
+        if isinstance(v,dict):
+            fd1=flatten_dict(v,symbol)
+            fd2=dict(zip((k+symbol+_k for _k in fd1.keys()),fd1.values()))
+            fd.update(fd2)
+        else:
+            fd.update({k:v})
+    return fd
 
 
 import os.path
