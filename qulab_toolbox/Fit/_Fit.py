@@ -199,7 +199,7 @@ class T1_Fit(BaseFit):
         ax = plt.gca() if ax is None else ax
         ax.set_xlabel(r'Time ($\mu$s)')
         ax.set_ylabel('Population')
-        ax.set_title('Energy Relation')
+        ax.set_title('Energy Relaxation')
         plt.text(0.95, 0.95, r'$T_1 = %.1f^{%.2f}_{%.2f} \mu$s'%(self.T1,self.T1_error,self.T1_error), 
                 horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
 
@@ -281,3 +281,26 @@ class Ramsey_Fit(BaseFit):
         plt.text(0.95, 0.95, '$T_{\phi} = %.1f^{%.2f}_{%.2f} \mu$s\n$\Delta = %.4f$ MHz'%(
                             self.Tphi,self.Tphi_error,self.Tphi_error,self.detuning), 
                 horizontalalignment='right', verticalalignment='top', transform=ax.transAxes)
+
+from .function import f_ge,f_r
+class Fge_Fit(BaseFit):
+    '''Simple Fit'''
+
+    def _fitfunc(self,I,f_ge_max,I_SS,Period,d):
+        args=dict(f_ge_max=f_ge_max,
+                  I_SS=I_SS,
+                  Period=Period,
+                  d=d)
+        return f_ge(I,args)
+
+class Fr_Fit(BaseFit):
+    '''Simple Fit'''
+
+    def _fitfunc(self,I,f_ge_max,I_SS,Period,d,f_c,g):
+        args=dict(f_ge_max=f_ge_max,
+                  I_SS=I_SS,
+                  Period=Period,
+                  d=d,
+                  f_c=f_c,
+                  g=g)
+        return f_r(I,args)

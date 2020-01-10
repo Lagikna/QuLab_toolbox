@@ -62,6 +62,7 @@ class d2c(object):
         if len(keys)>1:
             getattr(self,keys.pop(0)).set(keys,value) ##递归
         else:
+            assert hasattr(self,keys[0]) ##必须是字典中已有的关键词
             setattr(self,keys[0],value)
 
 def flatten_dict(d,symbol='.'):
