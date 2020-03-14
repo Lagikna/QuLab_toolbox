@@ -17,6 +17,7 @@ requirements = [
     'numpy>=1.13.3',
     'scipy>=1.2.0',
     'matplotlib>=2.1.0',
+    'blinker>=1.4',
     # 'QuLab>=0.4.0',
 ]
 

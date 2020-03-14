@@ -9,7 +9,7 @@ class Wavedata(object):
 
     def __init__(self, data = [], sRate = 1):
         '''给定序列和采样率，构造Wavedata'''
-        self.__data = np.array(data).flatten()
+        self.__data = np.asarray(data)#.flatten()
         # assert self.__data.ndim==1
         self.__sRate = sRate
 
