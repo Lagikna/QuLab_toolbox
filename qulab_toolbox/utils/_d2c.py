@@ -1,6 +1,8 @@
 from blinker import Signal
 import numpy as np
 
+from ._utils import is_equal
+
 class d2c(object):
     '''dict to class
     
@@ -74,34 +76,6 @@ class d2c(object):
         #     setattr(self,keys[0],value)
         return True
 
-def is_equal(v1,v2):
-    '''深入地比较v1,v2是否相等'''
-    try:
-        assert_equal(v1,v2)
-        return True
-    except AssertionError:
-        return False
-
-def assert_equal(v1,v2):
-    '''断言v1,v2相等'''
-    try:
-        if isinstance(v1,np.ndarray) or isinstance(v1,np.ndarray):
-            assert np.all(v1==v2)
-        else:
-            assert v1==v2
-    except ValueError: # ValueError: The truth value of an array with more than one element is ambiguous. Use a.any() or a.all()
-        if isinstance(v1,dict) and isinstance(v2,dict):
-            assert not set(v1.keys())^set(v2.keys()),Exception('keys not equal !')
-            for k in v1.keys():
-                _v1,_v2=v1[k],v2[k]
-                assert_equal(_v1,_v2)
-        elif isinstance(v1,(list,tuple,set)) and isinstance(v2,(list,tuple,set)):
-            for _v1,_v2 in zip(v1,v2):
-                assert_equal(_v1,_v2)
-        else:
-            assert False
-
-
 class cons_d2c(object):
     '''包含约束的d2c类'''
 
@@ -109,11 +83,11 @@ class cons_d2c(object):
         '''
         Parameters:
             d: 一个字典
-            constrains: 约束字典，例如，
-                {
-                    'k2':(('k1',), lambda v: v*3)
-                    'k3': (('k1','k2'), lambda v1,v2:v1+v2),
-                }
+            constrains: 约束条目，每个元素都为一个三元元组（deps, func, target），例如，
+                (
+                    (('k1.k11','k1.k12'),   (lambda v1,v2:v1+v2),   'k2'       ),
+                    (('k3','k4'),           (lambda v1,v2:(v1,v2)), ('k5','k6')),
+                )
             init: bool, 是否使用约束条件初始化传入的字典
         '''
         self.__d2c_instance=d2c(d)
@@ -122,39 +96,59 @@ class cons_d2c(object):
         self.subscribers=self.__init_cons(constrains,init=init)
 
     def __init_cons(self,constrains,init=True):
-        subscribers={}
-        for k,v in constrains.items():
-            deps,func=v
-            subs=_subscrib(k,deps,func,self)
+        subscribers=[]
+        for deps,func,target in constrains:
+            subs=_subscrib(deps,func,target,self)
+            subscribers.append(subs)
             for _k in deps:
-                self.sig.connect(subs,sender=_k)
-                if init:
-                    self.sig.send(_k)
-            subscribers.update({k:subs})
+                self.sig.connect(subs,sender=_k)    
+        if init:
+            deps_set=set()
+            for deps,func,target in constrains:
+                deps_set.update(deps)
+            for dep in deps_set:
+                self.sig.send(dep)
         return subscribers
         
-    def set(self,k,v):
-        _changed=self.__d2c_instance.set(k,v,check=True)
+    def set(self,k,v,check=True):
+        _changed=self.__d2c_instance.set(k,v,check=check)
         if _changed:
             self.sig.send(k)
+        return _changed
             
     def get(self,k):
         return self.__d2c_instance.get(k)
     
+    def update(self,d,check=True):
+        k_changed=[]
+        for k,v in d.items():
+            _changed=self.__d2c_instance.set(k,v,check=check)
+            if _changed:
+                k_changed.append(k)
+        for _k in k_changed:
+            self.sig.send(_k)
+    
     def __getattr__(self,item):
         return getattr(self.__d2c_instance,item)
 
-def _subscrib(key, deps=(), func=None, cons_d2c_ins=None):
+def _subscrib(deps, func, target, cons_d2c_ins):
     '''根据需要的参量产生一个订阅函数
     Parameters:
-        key,deps,func: 分别为目标的key、依赖的key列表或元组、约束函数，比如
-            ('k3',('k1','k2'),lambda v1,v2:v1+v2)
+        deps,func,target: 分别为 依赖的key[列表或元组]、约束函数、目标[单key(字符串)，或者多key(列表/元组)]，
+            比如 (('k1','k2'), lambda v1,v2:v1+v2, 'k3'), func的返回值应与target数目一致
         cons_d2c_ins: 上面cons_d2c的一个实例
     Return:
         返回一个订阅函数
     '''
-    def subscriber(send):
-        arg = [cfgmgr.get(_k) for _k in deps]
-        value=func(*arg)
-        cfgmgr.set(key,value)
+    if isinstance(target,str):
+        def subscriber(send):
+            arg = [cons_d2c_ins.get(k_dep) for k_dep in deps]
+            value=func(*arg)
+            cons_d2c_ins.set(target,value)
+    else:
+        def subscriber(send):
+            arg = [cons_d2c_ins.get(k_dep) for k_dep in deps]
+            value=func(*arg)
+            d=dict(zip(target,value))
+            cons_d2c_ins.update(d)
     return subscriber
